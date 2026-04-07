@@ -1,6 +1,7 @@
 const HABITS = [
   { id:'projets',  name:'Projets perso',          emoji:'🚀', type:'good', color:'#e879f9', jokerLimit:3 },
   { id:'gym',     name:'Salle',                 emoji:'🏋️', type:'good', color:'#34d399', jokerLimit:3 },
+  { id:'sleep',     name:'Dodo',                   emoji:'💤', type:'good', color:'#818cf8', jokerLimit:3 },
   { id:'work',     name:'Work',                   emoji:'💼', type:'good', color:'#fbbf24', jokerLimit:3 },
   { id:'nofilms',  name:'Pas de films',            emoji:'🎬', type:'bad',  color:'#f87171', jokerLimit:0 },
 ];
