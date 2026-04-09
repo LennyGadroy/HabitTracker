@@ -1,68 +1,78 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HabitTracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
-
-  <header>
-    <div class="header-left">
-      <div class="greeting" id="greeting">Bonsoir 🌙</div>
-      <div class="subdate" id="subdate">—</div>
-    </div>
-    <div class="score-orb">
-      <div class="score-num" id="scoreNum">0/5</div>
-      <div class="score-lbl">objectifs today</div>
-    </div>
-  </header>
-
-  <section>
-    <div class="sec-label">Aujourd'hui</div>
-    <div class="habits-grid" id="habitsGrid"></div>
-  </section>
-
-  <section>
-    <div class="sec-label">Séries & Jokers</div>
-    <div class="streaks-grid" id="streaksGrid"></div>
-  </section>
-
-  <section>
-    <div class="sec-label">Historique — 16 semaines</div>
-    <div id="heatmapContainer"></div>
-    <div class="hm-legend">
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#34d399"></div>Réussi</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#fb923c"></div>Joker 🃏</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#f87171"></div>Raté / Craqué</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#1e2740; border:1px solid #2c3b5a"></div>Non renseigné</div>
-    </div>
-  </section>
-
-  <section>
-    <div class="sec-label">Tendances mensuelles</div>
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Taux de réussite global — 30 jours</div>
-        <canvas id="lineChart"></canvas>
-        <div class="chart-legend" id="lineChartLegend"></div>
+  <div class="app">
+    <header>
+      <div class="header-left">
+        <div class="greeting" id="greeting">Good evening 🌙</div>
+        <div class="subdate" id="subdate">—</div>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Réussite par jour de semaine</div>
-        <canvas id="dayChart"></canvas>
+      <div class="score-orb">
+        <div class="score-num" id="scoreNum">0/8</div>
+        <div class="score-lbl">goals today</div>
       </div>
-    </div>
-  </section>
-
-</div>
-
-<div id="tooltip"></div>
-<canvas class="confetti-overlay" id="confettiCanvas"></canvas>
-<script src="script.js"></script>
+    </header>
+    <section>
+      <div class="sec-label">Today</div>
+      <div class="habits-grid" id="habitsGrid"></div>
+    </section>
+    <section>
+      <div class="sec-label">Streaks &amp; Jokers</div>
+      <div class="streaks-grid" id="streaksGrid"></div>
+    </section>
+    <section>
+      <div class="sec-label">History — 16 weeks</div>
+      <div id="heatmapContainer"></div>
+      <div class="hm-legend">
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#34d399"></div>Completed</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#fb923c"></div>Joker 🃏</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#f87171"></div>Missed / Slipped</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#1e2740; border:1px solid #2c3b5a"></div>Not logged</div>
+      </div>
+    </section>
+    <section>
+      <div class="sec-label">Per-Habit Performance — 30 days</div>
+      <div class="habits-charts-grid" id="habitChartsGrid"></div>
+    </section>
+    <section>
+      <div class="sec-label">Overview — Web Chart</div>
+      <div class="radar-wrap">
+        <div class="chart-card radar-card">
+          <div class="chart-title">All Habits — 30-day success rate</div>
+          <div class="radar-canvas-wrap">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="sec-label">Monthly Trends</div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Global success rate — 30 days</div>
+          <canvas id="lineChart"></canvas>
+          <div class="chart-legend" id="lineChartLegend"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Success by day of week</div>
+          <canvas id="dayChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div id="tooltip"></div>
+  <canvas class="confetti-overlay" id="confettiCanvas"></canvas>
+  <script src="script.js"></script>
 </body>
 </html>
