@@ -525,6 +525,22 @@
 
     .just-done { animation: pulse .6s ease; }
 
+    .weekday-badge {
+      display: inline-block;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--s4);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 1px 6px;
+      margin-left: 5px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
     @media (max-width: 560px) {
       body { padding: 16px 14px 50px; }
     }
