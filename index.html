@@ -16,9 +16,12 @@
       <div class="greeting" id="greeting">Good evening 🌙</div>
       <div class="subdate" id="subdate">—</div>
     </div>
-    <div class="score-orb">
-      <div class="score-num" id="scoreNum">0/8</div>
-      <div class="score-lbl">goals today</div>
+    <div class="header-right">
+      <div class="score-orb">
+        <div class="score-num" id="scoreNum">0/10</div>
+        <div class="score-lbl">goals today</div>
+      </div>
+      <button class="profile-btn" onclick="openProfile()" title="Profile">👤</button>
     </div>
   </header>
   <section>
@@ -68,6 +71,29 @@
       </div>
     </div>
   </section>
+</div>
+<div id="profileModal" class="modal-overlay" onclick="closeProfile()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">👤 Profile</div>
+      <button class="modal-x" onclick="closeProfile()">✕</button>
+    </div>
+    <div class="modal-section">
+      <label class="modal-label">Display name</label>
+      <div class="modal-row">
+        <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32"
+               onkeydown="if(event.key==='Enter') saveProfileName()">
+        <button class="modal-save-btn" onclick="saveProfileName()">Save</button>
+      </div>
+      <div class="modal-hint">Shown in the greeting at the top of the page.</div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-section">
+      <div class="modal-label modal-danger-lbl">⚠ Danger zone</div>
+      <div class="modal-hint" style="margin-bottom:10px">Permanently erases all logs, streaks and settings. This cannot be undone.</div>
+      <button class="modal-reset-btn" onclick="confirmReset()">🗑 Reset all data</button>
+    </div>
+  </div>
 </div>
 <div id="tooltip"></div>
 <canvas class="confetti-overlay" id="confettiCanvas"></canvas>

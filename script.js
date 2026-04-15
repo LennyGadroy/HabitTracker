@@ -1,13 +1,19 @@
 const HABITS = [
-  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good', color:'#818cf8', jokerLimit:3, weekdayOnly:true  },
-  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good', color:'#e879f9', jokerLimit:3, weekdayOnly:false },
-  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good', color:'#34d399', jokerLimit:3, weekdayOnly:true  },
-  { id:'work',     name:'Work',              emoji:'💼', type:'good', color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
-  { id:'noscroll', name:'No Scroll',         emoji:'📵', type:'bad',  color:'#fb923c', jokerLimit:0, weekdayOnly:false },
-  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',  color:'#f87171', jokerLimit:0, weekdayOnly:false },
-  { id:'water',    name:'Water',             emoji:'💧', type:'good', color:'#38bdf8', jokerLimit:2, weekdayOnly:false },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good', color:'#a78bfa', jokerLimit:2, weekdayOnly:false },
+  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',   color:'#818cf8', jokerLimit:3, weekdayOnly:true  },
+  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',   color:'#e879f9', jokerLimit:3, weekdayOnly:false },
+  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',   color:'#34d399', jokerLimit:3, weekdayOnly:true  },
+  { id:'work',     name:'Work',              emoji:'💼', type:'good',   color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
+  { id:'noscroll', name:'No Scroll',         emoji:'📵', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
+  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
+  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
+  { id:'water',    name:'Water',             emoji:'💧', type:'water',  color:'#38bdf8', jokerLimit:2, weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:2, weekdayOnly:false },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false },
 ];
+
+const WATER_GOAL = 1500;
+const WATER_STEP = 250;
+const WATER_MAX  = 3000;
 
 const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
 
@@ -35,12 +41,63 @@ const addDays = (d, n) => {
 
 const today = () => fmtDate(new Date());
 
+function getWaterMl(dateKey) {
+  const val = DB.habits['water'].logs[dateKey];
+  if (typeof val === 'number') return val;
+  if (val === 'done') return WATER_GOAL;
+  return 0;
+}
+function isWaterDone(dateKey) { return getWaterMl(dateKey) >= WATER_GOAL; }
+
+function getWeekMonday(dateObj) {
+  const d = new Date(dateObj);
+  d.setHours(0, 0, 0, 0);
+  const dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
+  d.setDate(d.getDate() - dow);
+  return fmtDate(d);
+}
+
+function isWeeklyDoneForWeek(habitId, weekMondayKey) {
+  const logs = DB.habits[habitId].logs;
+  const start = parseDate(weekMondayKey);
+  for (let i = 0; i < 7; i++) {
+    const k = fmtDate(addDays(start, i));
+    if (logs[k] === 'done') return true;
+  }
+  return false;
+}
+
+function calcWeeklyStreak(habit) {
+  const currentWeekMonday = getWeekMonday(new Date());
+  const currentDone = isWeeklyDoneForWeek(habit.id, currentWeekMonday);
+  const startOffset = currentDone ? 0 : 1;
+  let streak = 0;
+  for (let offset = startOffset; offset < 104; offset++) {
+    const weekMonday = fmtDate(addDays(parseDate(currentWeekMonday), -offset * 7));
+    if (weekMonday < DB.createdAt) break;
+    if (!isWeeklyDoneForWeek(habit.id, weekMonday)) break;
+    streak++;
+  }
+  return streak;
+}
+
+function getHabitDayValue(habit, dateKey, dateObj) {
+  if (habit.type === 'water') return isWaterDone(dateKey) ? 1 : 0;
+  if (habit.type === 'weekly') {
+    const weekMonday = getWeekMonday(dateObj || parseDate(dateKey));
+    return isWeeklyDoneForWeek(habit.id, weekMonday) ? 1 : 0;
+  }
+  const log = DB.habits[habit.id].logs[dateKey];
+  if (habit.type === 'bad') return log === 'fail' ? 0 : 1;
+  return (log === 'done' || log === 'joker') ? 1 : 0;
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem('ht_v2');
     if (raw) return JSON.parse(raw);
   } catch(e) {}
-  const d = { createdAt: today(), habits: {} };
+  const d = { createdAt: today(), habits: {}, profile: { name: '' } };
   HABITS.forEach(h => d.habits[h.id] = { logs: {} });
   return d;
 }
@@ -52,6 +109,31 @@ function saveData() {
 let DB = loadData();
 HABITS.forEach(h => { if (!DB.habits[h.id]) DB.habits[h.id] = { logs: {} }; });
 if (!DB.createdAt) DB.createdAt = today();
+if (!DB.profile) DB.profile = { name: '' };
+
+function openProfile() {
+  document.getElementById('pseudoInput').value = DB.profile.name || '';
+  document.getElementById('profileModal').classList.add('open');
+  setTimeout(() => document.getElementById('pseudoInput').focus(), 80);
+}
+
+function closeProfile() {
+  document.getElementById('profileModal').classList.remove('open');
+}
+
+function saveProfileName() {
+  DB.profile.name = document.getElementById('pseudoInput').value.trim();
+  saveData();
+  renderHeader();
+  closeProfile();
+}
+
+function confirmReset() {
+  if (confirm('⚠️ This will permanently delete ALL your habit data and cannot be undone.\n\nAre you sure?')) {
+    localStorage.removeItem('ht_v2');
+    location.reload();
+  }
+}
 
 function jokersUsedThisMonth(habitId) {
   const monthKey = today().slice(0,7);
@@ -62,7 +144,7 @@ function jokersUsedThisMonth(habitId) {
 }
 
 function jokersAvailable(habit) {
-  if (habit.type === 'bad') return 0;
+  if (habit.type !== 'good') return 0;
   return Math.max(0, habit.jokerLimit - jokersUsedThisMonth(habit.id));
 }
 
@@ -72,6 +154,11 @@ function isDayRequired(habit, dateObj) {
 }
 
 function calcStreak(habit) {
+  if (habit.type === 'weekly') {
+    const streak = calcWeeklyStreak(habit);
+    return { current: streak, longest: streak, jokersAvail: 0, jokersUsed: 0 };
+  }
+
   const logs = DB.habits[habit.id].logs;
   const todayKey = today();
   const createdAt = DB.createdAt;
@@ -90,8 +177,13 @@ function calcStreak(habit) {
     return { current: streak, longest: streak, jokersAvail: 0, jokersUsed: 0 };
   }
 
-  const todayStatus = logs[todayKey];
-  const todayDone = todayStatus === 'done' || todayStatus === 'joker';
+  const logDone = k => {
+    if (habit.type === 'water') return isWaterDone(k);
+    const s = logs[k];
+    return s === 'done' || s === 'joker';
+  };
+
+  const todayDone = logDone(todayKey);
   const todayObj = new Date();
   const todayIsWeekend = habit.weekdayOnly && isWeekend(todayObj);
   const todayEffectiveDone = todayDone || todayIsWeekend;
@@ -104,21 +196,17 @@ function calcStreak(habit) {
     const k = fmtDate(d);
     if (k < createdAt) break;
     if (habit.weekdayOnly && isWeekend(d)) { d = addDays(d, -1); continue; }
-    const s = logs[k];
-    if (s === 'done' || s === 'joker') { streak++; }
+    if (logDone(k)) { streak++; }
     else { break; }
     d = addDays(d, -1);
   }
 
   let best = 0, run = 0;
-  const startDate = parseDate(createdAt);
-  const lastDate  = new Date();
-  let dd = new Date(startDate);
-  while (fmtDate(dd) <= fmtDate(lastDate)) {
+  let dd = new Date(parseDate(createdAt));
+  while (fmtDate(dd) <= todayKey) {
     const k = fmtDate(dd);
     if (habit.weekdayOnly && isWeekend(dd)) { dd = addDays(dd, 1); continue; }
-    const s = logs[k];
-    if (s === 'done' || s === 'joker') { run++; best = Math.max(best, run); }
+    if (logDone(k)) { run++; best = Math.max(best, run); }
     else run = 0;
     dd = addDays(dd, 1);
   }
@@ -134,8 +222,21 @@ function calcStreak(habit) {
 function toggleHabit(id) {
   const habit = HABITS.find(h => h.id === id);
   const t = today();
-  const cur = DB.habits[id].logs[t];
 
+  if (habit.type === 'water') { addWater(); return; }
+
+  if (habit.type === 'weekly') {
+    const cur = DB.habits[id].logs[t];
+    if (cur === 'done') delete DB.habits[id].logs[t];
+    else DB.habits[id].logs[t] = 'done';
+    saveData();
+    if (countDoneToday() === HABITS.length) launchConfetti();
+    renderAll();
+    flashCard(id);
+    return;
+  }
+
+  const cur = DB.habits[id].logs[t];
   if (habit.type === 'bad') {
     if (cur === 'fail') delete DB.habits[id].logs[t];
     else DB.habits[id].logs[t] = 'fail';
@@ -144,22 +245,34 @@ function toggleHabit(id) {
     else DB.habits[id].logs[t] = 'done';
   }
   saveData();
-
-  const doneCount = countDoneToday();
-  if (doneCount === HABITS.length) launchConfetti();
-
+  if (countDoneToday() === HABITS.length) launchConfetti();
   renderAll();
   flashCard(id);
 }
 
+function addWater() {
+  const t = today();
+  const cur = getWaterMl(t);
+  const next = cur >= WATER_MAX ? 0 : cur + WATER_STEP;
+  if (next === 0) delete DB.habits['water'].logs[t];
+  else DB.habits['water'].logs[t] = next;
+  saveData();
+  if (next >= WATER_GOAL && cur < WATER_GOAL) {
+    if (countDoneToday() === HABITS.length) launchConfetti();
+    flashCard('water');
+  }
+  renderAll();
+}
+
 function useJoker(id) {
   const habit = HABITS.find(h => h.id === id);
-  if (habit.type === 'bad') return;
+  if (habit.type !== 'good') return;
   if (jokersAvailable(habit) <= 0) return;
 
   const yest = fmtDate(addDays(new Date(), -1));
   if (yest < DB.createdAt) return;
-  if (DB.habits[id].logs[yest] !== 'done' && DB.habits[id].logs[yest] !== 'joker') {
+  const yestLog = DB.habits[id].logs[yest];
+  if (yestLog !== 'done' && yestLog !== 'joker') {
     DB.habits[id].logs[yest] = 'joker';
     saveData();
     renderAll();
@@ -168,7 +281,13 @@ function useJoker(id) {
 
 function countDoneToday() {
   const t = today();
+  const todayDate = new Date();
+  todayDate.setHours(0,0,0,0);
   return HABITS.reduce((n, h) => {
+    if (h.type === 'water') return n + (isWaterDone(t) ? 1 : 0);
+    if (h.type === 'weekly') {
+      return n + (isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate)) ? 1 : 0);
+    }
     const s = DB.habits[h.id].logs[t];
     if (h.type === 'bad') return n + (s !== 'fail' ? 1 : 0);
     return n + (s === 'done' || s === 'joker' ? 1 : 0);
@@ -183,8 +302,9 @@ function flashCard(id) {
 function renderHeader() {
   const now = new Date();
   const h = now.getHours();
-  const greet = h < 6 ? '🌙 Late night' : h < 12 ? '☀️ Good morning' : h < 18 ? '🌤 Good afternoon' : '🌙 Good evening';
-  document.getElementById('greeting').textContent = greet;
+  const greetBase = h < 6 ? '🌙 Late night' : h < 12 ? '☀️ Good morning' : h < 18 ? '🌤 Good afternoon' : '🌙 Good evening';
+  const name = DB.profile && DB.profile.name ? `, ${DB.profile.name}` : '';
+  document.getElementById('greeting').textContent = greetBase + name;
   document.getElementById('subdate').textContent =
     `${DAY_FULL[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`;
 
@@ -197,25 +317,74 @@ function renderHeader() {
 
 function renderHabits() {
   const t = today();
+  const todayDate = new Date();
+  todayDate.setHours(0,0,0,0);
+
   document.getElementById('habitsGrid').innerHTML = HABITS.map((h, i) => {
-    const log = DB.habits[h.id].logs[t];
-    let cardCls, btnText;
+    const delay = `animation-delay:${i * .07}s`;
+
+    if (h.type === 'water') {
+      const ml = getWaterMl(t);
+      const done = ml >= WATER_GOAL;
+      const pct = Math.min(100, Math.round((ml / WATER_GOAL) * 100));
+      const cardCls = done ? 'habit-card done' : 'habit-card';
+      const btnText = done
+        ? `✓ Goal! +250ml (${ml}ml)`
+        : `+ 250ml`;
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+                data-habit="${h.id}" onclick="addWater()">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}
+          <span class="water-amount">${ml} / ${WATER_GOAL} ml</span>
+        </div>
+        <div class="water-track">
+          <div class="water-fill" style="width:${pct}%;background:${h.color}"></div>
+        </div>
+        <button class="h-btn" onclick="event.stopPropagation(); addWater()">${btnText}</button>
+      </div>`;
+    }
+
+    if (h.type === 'weekly') {
+      const weekMonday = getWeekMonday(todayDate);
+      const weekDone = isWeeklyDoneForWeek(h.id, weekMonday);
+      const cardCls = weekDone ? 'habit-card done' : 'habit-card';
+      const btnText = weekDone ? '✓ Done this week!' : 'Mark done this week';
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+                data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}<span class="weekday-badge">Weekly</span></div>
+        <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+      </div>`;
+    }
 
     if (h.type === 'bad') {
+      const log = DB.habits[h.id].logs[t];
+      let cardCls, btnText;
       if (log === 'fail') {
         cardCls = 'habit-card bad-fail';
-        btnText = h.id === 'nofilms' ? '❌ Watched a film' : '❌ Scrolled today';
+        const labels = {
+          noscroll: '❌ Scrolled today',
+          nofilms:  '❌ Watched a film',
+          nogaming: '❌ Gamed today',
+        };
+        btnText = labels[h.id] || '❌ Failed today';
       } else {
         cardCls = 'habit-card bad-done';
         btnText = '✓ Clean today';
       }
-    } else {
-      const done = log === 'done' || log === 'joker';
-      cardCls = done ? 'habit-card done' : 'habit-card';
-      btnText = done ? '✓ Completed!' : 'Mark as done';
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+                data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}</div>
+        <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+      </div>`;
     }
 
-    return `<div class="${cardCls}" style="--hc:${h.color}; animation-delay:${i * .07}s"
+    const log = DB.habits[h.id].logs[t];
+    const done = log === 'done' || log === 'joker';
+    const cardCls = done ? 'habit-card done' : 'habit-card';
+    const btnText = done ? '✓ Completed!' : 'Mark as done';
+    return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
               data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
       <span class="h-emoji">${h.emoji}</span>
       <div class="h-name">${h.name}${h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : ''}</div>
@@ -229,6 +398,20 @@ function renderStreaks() {
 
   document.getElementById('streaksGrid').innerHTML = HABITS.map((h, i) => {
     const s = calcStreak(h);
+    const delay = `animation-delay:${i * .07}s`;
+
+    if (h.type === 'weekly') {
+      return `<div class="streak-card" style="--hc:${h.color};${delay}">
+        <div class="streak-top">
+          <span class="streak-emoji">${h.emoji}</span>
+          <span class="bad-badge" style="color:${h.color};background:color-mix(in srgb,${h.color} 14%,transparent);border-color:color-mix(in srgb,${h.color} 35%,transparent)">weekly</span>
+        </div>
+        <div class="streak-num">${s.current}</div>
+        <div class="streak-sublabel">weeks in a row</div>
+        <div class="streak-best">Best: ${s.longest} weeks</div>
+      </div>`;
+    }
+
     const yestLog = DB.habits[h.id].logs[yest];
     const canJoker = h.type === 'good'
       && s.jokersAvail > 0
@@ -247,11 +430,18 @@ function renderStreaks() {
         ${canJoker ? '🃏 Joker for yesterday' : yest < DB.createdAt ? '—' : yestLog === 'done' || yestLog === 'joker' ? '✓ Yesterday OK' : '0 joker left'}
       </button>` : '';
 
+    const sublabelMap = {
+      noscroll: 'days without scrolling',
+      nofilms:  'days without films',
+      nogaming: 'days without gaming',
+    };
     const sublabel = h.type === 'bad'
-      ? (h.id === 'nofilms' ? 'days without films' : 'days without scrolling')
-      : (h.weekdayOnly ? 'weekdays in a row' : 'day streak');
+      ? (sublabelMap[h.id] || 'days clean')
+      : h.type === 'water'
+        ? 'days hitting goal'
+        : h.weekdayOnly ? 'weekdays in a row' : 'day streak';
 
-    return `<div class="streak-card" style="--hc:${h.color}; animation-delay:${i * .07}s">
+    return `<div class="streak-card" style="--hc:${h.color};${delay}">
       <div class="streak-top">
         <span class="streak-emoji">${h.emoji}</span>
         ${h.type === 'bad' ? '<span class="bad-badge">avoid</span>' : ''}
@@ -314,8 +504,50 @@ function renderHeatmap() {
           continue;
         }
 
+        if (habit.type === 'weekly') {
+          const weekMonday = getWeekMonday(date);
+          const isCurrentWeek = weekMonday === getWeekMonday(todayDate);
+          const weekDone = isWeeklyDoneForWeek(habit.id, weekMonday);
+          const specificDayDone = logs[k] === 'done';
+          let bg, opacity = 1;
+          if (weekDone) {
+            bg = specificDayDone ? habit.color : habit.color + '55';
+          } else if (isCurrentWeek) {
+            bg = '#1e2740'; opacity = 0.6;
+          } else {
+            bg = '#f87171'; opacity = 0.5;
+          }
+          const statusLabel = weekDone ? (specificDayDone ? '✓ logged' : '✓ week done') : isCurrentWeek ? '— ongoing' : '✗ missed';
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
+          weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
+            onmouseenter="tipShow(event,'${tip}')"
+            onmouseleave="tipHide()"></div>`;
+          continue;
+        }
+
         const log = logs[k];
-        let status;
+
+        if (habit.type === 'water') {
+          const ml = typeof log === 'number' ? log : (log === 'done' ? WATER_GOAL : 0);
+          let bg, opacity = 1;
+          let statusLabel;
+          if (ml >= WATER_GOAL) {
+            bg = habit.color;
+            statusLabel = `✓ ${ml}ml`;
+          } else if (ml > 0) {
+            bg = habit.color + '66';
+            statusLabel = `⚠ ${ml}ml`;
+          } else {
+            bg = '#1e2740'; opacity = 0.6;
+            statusLabel = '—';
+          }
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
+          weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
+            onmouseenter="tipShow(event,'${tip}')"
+            onmouseleave="tipHide()"></div>`;
+          continue;
+        }
+
         if (habit.weekdayOnly && isWeekend(date)) {
           const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — weekend ✦`;
           weeksHtml += `<div class="hm-cell hm-cell-off"
@@ -324,6 +556,8 @@ function renderHeatmap() {
             onmouseleave="tipHide()"></div>`;
           continue;
         }
+
+        let status;
         if (habit.type === 'bad') {
           status = log === 'fail' ? 'fail' : 'done';
         } else {
@@ -334,7 +568,6 @@ function renderHeatmap() {
                  : status === 'joker' ? '#fb923c'
                  : status === 'fail'  ? '#f87171'
                  : '#1e2740';
-
         const opacity = status === 'miss' ? 0.6 : 1;
         const statusLabel = status === 'done' ? '✓' : status === 'joker' ? '🃏' : status === 'fail' ? '✗' : '—';
         const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
@@ -348,7 +581,10 @@ function renderHeatmap() {
     }
 
     const badgeStyle = `color:${habit.color};border-color:color-mix(in srgb,${habit.color} 35%,transparent);background:color-mix(in srgb,${habit.color} 10%,transparent)`;
-    const streakLabel = habit.type === 'bad' ? 'd. clean' : (habit.weekdayOnly ? 'weekdays' : 'd. streak');
+    const streakLabel = habit.type === 'weekly' ? 'wk. streak'
+      : habit.type === 'bad' ? 'd. clean'
+      : habit.weekdayOnly ? 'weekdays' : 'd. streak';
+
     return `
       <div class="heatmap-item">
         <div class="heatmap-meta">
@@ -372,14 +608,11 @@ function tipShow(e, text) {
   tip.classList.add('show');
   tipMove(e);
 }
-
 function tipHide() { tip.classList.remove('show'); }
-
 function tipMove(e) {
   tip.style.left = (e.clientX + 14) + 'px';
   tip.style.top  = (e.clientY - 36) + 'px';
 }
-
 document.addEventListener('mousemove', e => {
   if (tip.classList.contains('show')) tipMove(e);
 });
@@ -404,11 +637,7 @@ function drawLineChart() {
       const k = fmtDate(d);
       if (k > todayKey || k < DB.createdAt) { pts.push(null); continue; }
       if (h.weekdayOnly && isWeekend(d)) { pts.push(1); continue; }
-      const log = DB.habits[h.id].logs[k];
-      let val;
-      if (h.type === 'bad') val = log === 'fail' ? 0 : 1;
-      else val = (log === 'done' || log === 'joker') ? 1 : 0;
-      pts.push(val);
+      pts.push(getHabitDayValue(h, k, d));
     }
     return { habit: h, pts };
   });
@@ -506,11 +735,8 @@ function drawDayChart() {
 
     HABITS.forEach(h => {
       if (h.weekdayOnly && isWeekend(d)) return;
-      const log = DB.habits[h.id].logs[k];
-      let done;
-      if (h.type === 'bad') done = log !== 'fail';
-      else done = log === 'done' || log === 'joker';
-      stats[dow].done  += done ? 1 : 0;
+      const val = getHabitDayValue(h, k, d);
+      stats[dow].done  += val;
       stats[dow].total += 1;
     });
   }
@@ -605,10 +831,7 @@ function drawHabitCharts() {
       const k = fmtDate(d);
       if (k > todayKey || k < DB.createdAt) { pts.push(null); continue; }
       if (habit.weekdayOnly && isWeekend(d)) { pts.push(null); continue; }
-      const log = DB.habits[habit.id].logs[k];
-      let val;
-      if (habit.type === 'bad') val = log === 'fail' ? 0 : 1;
-      else val = (log === 'done' || log === 'joker') ? 1 : 0;
+      const val = getHabitDayValue(habit, k, d);
       pts.push(val);
       if (val === 1) successCount++;
     }
@@ -708,11 +931,7 @@ function drawRadarChart() {
       const k = fmtDate(d);
       if (k < DB.createdAt) continue;
       if (habit.weekdayOnly && isWeekend(d)) continue;
-      const log = DB.habits[habit.id].logs[k];
-      let val;
-      if (habit.type === 'bad') val = log === 'fail' ? 0 : 1;
-      else val = (log === 'done' || log === 'joker') ? 1 : 0;
-      success += val;
+      success += getHabitDayValue(habit, k, d);
       total++;
     }
     return total > 0 ? success / total : 0;
