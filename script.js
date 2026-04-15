@@ -15,8 +15,22 @@ const WATER_GOAL = 1500;
 const WATER_STEP = 250;
 const WATER_MAX  = 3000;
 
-const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
+const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
+const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
 
+const JOKER_REASONS = [
+  { id: 'sick',    label: '🤒 Malade' },
+  { id: 'work',    label: '💼 Trop de travail' },
+  { id: 'social',  label: '🎉 Soirée imprévue' },
+  { id: 'tired',   label: '😴 Épuisé' },
+  { id: 'travel',  label: '✈️ Voyage' },
+  { id: 'other',   label: '❓ Autre' },
+];
+
+const MOOD_EMOJIS  = ['', '😫', '😕', '😐', '😊', '🤩'];
+const MOOD_COLORS  = ['', '#f87171', '#fb923c', '#fbbf24', '#86efac', '#34d399'];
+
+const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_SHORT   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DAY_FULL    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -110,9 +124,521 @@ let DB = loadData();
 HABITS.forEach(h => { if (!DB.habits[h.id]) DB.habits[h.id] = { logs: {} }; });
 if (!DB.createdAt) DB.createdAt = today();
 if (!DB.profile) DB.profile = { name: '' };
+if (DB.profile.soundEnabled === undefined) DB.profile.soundEnabled = true;
+if (!DB.xp) DB.xp = 0;
+if (!DB.unlockedAchievements) DB.unlockedAchievements = [];
+if (!DB.jokerReasons) DB.jokerReasons = {};
+if (!DB.moods) DB.moods = {};
+if (!DB.perfectDaysClaimed) DB.perfectDaysClaimed = [];
+
+const audioCtx = (() => {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+})();
+
+function playSound(type) {
+  if (!DB.profile.soundEnabled || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (type === 'done') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.28);
+    } else if (type === 'undo') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.22);
+    } else if (type === 'fail') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.35);
+    } else if (type === 'water') {
+      [523, 659].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = audioCtx.currentTime + i * 0.1;
+        gain.gain.setValueAtTime(0.14, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        osc.start(t);
+        osc.stop(t + 0.3);
+      });
+    } else if (type === 'fanfare') {
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const t = audioCtx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        osc.start(t);
+        osc.stop(t + 0.5);
+      });
+    } else if (type === 'levelup') {
+      [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = audioCtx.currentTime + i * 0.1;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.28, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      });
+    }
+  } catch(e) {}
+}
+
+function showToast(msg, duration) {
+  duration = duration || 3200;
+  const existing = document.getElementById('toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 400);
+  }, duration);
+}
+
+function calcLevel(xp) {
+  xp = xp || 0;
+  let level = 1;
+  for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+    if (xp >= LEVEL_THRESHOLDS[i]) level = i + 1;
+    else break;
+  }
+  return Math.min(level, LEVEL_THRESHOLDS.length);
+}
+
+function xpProgress(xp) {
+  xp = xp || 0;
+  const level = calcLevel(xp);
+  if (level >= LEVEL_THRESHOLDS.length) {
+    return { pct: 100, needed: 0 };
+  }
+  const cur = LEVEL_THRESHOLDS[level - 1] || 0;
+  const next = LEVEL_THRESHOLDS[level];
+  const pct = Math.round(((xp - cur) / (next - cur)) * 100);
+  return { pct, needed: next - xp };
+}
+
+function giveXP(amount) {
+  const prevLevel = calcLevel(DB.xp);
+  DB.xp = (DB.xp || 0) + amount;
+  const newLevel = calcLevel(DB.xp);
+  saveData();
+  if (newLevel > prevLevel) {
+    const name = LEVEL_NAMES[newLevel - 1] || `Level ${newLevel}`;
+    setTimeout(() => {
+      playSound('levelup');
+      showToast(`🎉 Level Up! You're now ${name} — Lv.${newLevel}`, 4000);
+    }, 300);
+  }
+}
+
+function checkPerfectWeek() {
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  for (let weekOffset = 1; weekOffset <= 12; weekOffset++) {
+    const weekStart = addDays(parseDate(getWeekMonday(todayDate)), -(weekOffset * 7));
+    const weekStartKey = fmtDate(weekStart);
+    if (weekStartKey < DB.createdAt) break;
+    let perfect = true;
+    for (let d = 0; d < 7; d++) {
+      const date = addDays(weekStart, d);
+      if (date > todayDate) continue;
+      const k = fmtDate(date);
+      if (k < DB.createdAt) { perfect = false; break; }
+      for (const h of HABITS) {
+        if (h.weekdayOnly && isWeekend(date)) continue;
+        if (getHabitDayValue(h, k, date) !== 1) { perfect = false; break; }
+      }
+      if (!perfect) break;
+    }
+    if (perfect) return true;
+  }
+  return false;
+}
+
+function checkGymMonth() {
+  const gymHabit = HABITS.find(h => h.id === 'gym');
+  if (!gymHabit) return false;
+  const monthKey = today().slice(0, 7);
+  const count = Object.entries(DB.habits['gym'].logs)
+    .filter(([k, v]) => k.startsWith(monthKey) && v === 'done').length;
+  return count >= 20;
+}
+
+const ACHIEVEMENTS = [
+  {
+    id: 'first_habit',
+    emoji: '🌱',
+    name: 'First Step',
+    desc: 'Complete your first habit',
+    check: () => Object.values(DB.habits).some(h => Object.keys(h.logs).length > 0)
+  },
+  {
+    id: 'le_chameau',
+    emoji: '🐫',
+    name: 'Le Chameau',
+    desc: '7 days hitting the water goal in a row',
+    check: () => { const h = HABITS.find(x => x.id === 'water'); return h && calcStreak(h).current >= 7; }
+  },
+  {
+    id: 'semaine_parfaite',
+    emoji: '⭐',
+    name: 'Semaine Parfaite',
+    desc: '100% success on a complete week',
+    check: () => checkPerfectWeek()
+  },
+  {
+    id: 'garde_de_fer',
+    emoji: '🛡️',
+    name: 'Garde de Fer',
+    desc: 'No bad habit triggered for 14 days',
+    check: () => {
+      const bads = HABITS.filter(h => h.type === 'bad');
+      return bads.length > 0 && bads.every(h => calcStreak(h).current >= 14);
+    }
+  },
+  {
+    id: 'centurion',
+    emoji: '⚔️',
+    name: 'Centurion',
+    desc: 'Accumulate 100 XP',
+    check: () => (DB.xp || 0) >= 100
+  },
+  {
+    id: 'on_fire',
+    emoji: '🔥',
+    name: 'On Fire',
+    desc: 'Reach Level 5',
+    check: () => calcLevel(DB.xp) >= 5
+  },
+  {
+    id: 'bookworm',
+    emoji: '📖',
+    name: 'Bookworm',
+    desc: '14-day reading streak',
+    check: () => { const h = HABITS.find(x => x.id === 'read'); return h && calcStreak(h).current >= 14; }
+  },
+  {
+    id: 'digital_detox',
+    emoji: '📵',
+    name: 'Digital Detox',
+    desc: '30 days without scrolling',
+    check: () => { const h = HABITS.find(x => x.id === 'noscroll'); return h && calcStreak(h).current >= 30; }
+  },
+  {
+    id: 'iron_will',
+    emoji: '💪',
+    name: 'Iron Will',
+    desc: '20 gym sessions this month',
+    check: () => checkGymMonth()
+  },
+  {
+    id: 'consistent',
+    emoji: '🌅',
+    name: 'Consistent',
+    desc: 'Any single habit streak of 30+ days',
+    check: () => HABITS.some(h => calcStreak(h).current >= 30)
+  },
+];
+
+function checkAchievements() {
+  let newUnlocks = 0;
+  ACHIEVEMENTS.forEach(a => {
+    if (!DB.unlockedAchievements.includes(a.id) && a.check()) {
+      DB.unlockedAchievements.push(a.id);
+      newUnlocks++;
+      const delay = newUnlocks * 700;
+      setTimeout(() => {
+        showToast(`🏆 Achievement unlocked: ${a.name} ${a.emoji}`, 3500);
+        playSound('done');
+      }, delay);
+    }
+  });
+  if (newUnlocks > 0) saveData();
+}
+
+function checkPerfectDayBonus() {
+  const t = today();
+  if (DB.perfectDaysClaimed.includes(t)) return;
+  if (countDoneToday() === HABITS.length) {
+    DB.perfectDaysClaimed.push(t);
+    giveXP(50);
+    setTimeout(() => showToast('🌟 Perfect Day! +50 XP bonus', 3500), 600);
+    saveData();
+  }
+}
+
+let pendingJokerId = null;
+let selectedJokerReason = null;
+
+function openJokerModal(id) {
+  pendingJokerId = id;
+  selectedJokerReason = null;
+  const list = document.getElementById('jokerReasonsList');
+  list.innerHTML = JOKER_REASONS.map(r =>
+    `<button class="joker-reason-btn" data-reason="${r.id}" onclick="selectJokerReason('${r.id}')">${r.label}</button>`
+  ).join('');
+  document.getElementById('jokerConfirmBtn').disabled = true;
+  document.getElementById('jokerModal').classList.add('open');
+}
+
+function selectJokerReason(reasonId) {
+  selectedJokerReason = reasonId;
+  document.querySelectorAll('.joker-reason-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.reason === reasonId);
+  });
+  document.getElementById('jokerConfirmBtn').disabled = false;
+}
+
+function closeJokerModal() {
+  pendingJokerId = null;
+  selectedJokerReason = null;
+  document.getElementById('jokerModal').classList.remove('open');
+}
+
+function confirmJoker() {
+  if (!pendingJokerId || !selectedJokerReason) return;
+  const id = pendingJokerId;
+  const reason = selectedJokerReason;
+  closeJokerModal();
+
+  const habit = HABITS.find(h => h.id === id);
+  if (!habit || habit.type !== 'good') return;
+  if (jokersAvailable(habit) <= 0) return;
+
+  const yest = fmtDate(addDays(new Date(), -1));
+  if (yest < DB.createdAt) return;
+  const yestLog = DB.habits[id].logs[yest];
+  if (yestLog !== 'done' && yestLog !== 'joker') {
+    DB.habits[id].logs[yest] = 'joker';
+    DB.jokerReasons[`${yest}_${id}`] = reason;
+    saveData();
+    renderAll();
+  }
+}
+
+let currentMoodDate = null;
+
+function checkDailyMood() {
+  if (sessionStorage.getItem('moodChecked')) return;
+  sessionStorage.setItem('moodChecked', '1');
+  const yest = fmtDate(addDays(new Date(), -1));
+  if (yest < DB.createdAt) return;
+  if (DB.moods[yest] !== undefined) return;
+  setTimeout(() => openMoodModal(yest), 2000);
+}
+
+function openMoodModal(dateKey) {
+  currentMoodDate = dateKey;
+  const date = parseDate(dateKey);
+  document.getElementById('moodDateLabel').textContent =
+    `${DAY_FULL[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+  document.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('moodModal').classList.add('open');
+}
+
+function closeMoodModal() {
+  currentMoodDate = null;
+  document.getElementById('moodModal').classList.remove('open');
+}
+
+function selectMood(value) {
+  document.querySelectorAll('.mood-emoji-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.value) === value);
+  });
+  if (!currentMoodDate) return;
+  DB.moods[currentMoodDate] = value;
+  saveData();
+  setTimeout(() => {
+    closeMoodModal();
+    renderMoodSection();
+  }, 450);
+}
+
+function calcMoodCorrelations() {
+  const moodEntries = Object.entries(DB.moods);
+  if (moodEntries.length < 5) return [];
+  return HABITS.map(habit => {
+    let sumDone = 0, cntDone = 0, sumNotDone = 0, cntNotDone = 0;
+    moodEntries.forEach(([k, mood]) => {
+      const dateObj = parseDate(k);
+      const val = getHabitDayValue(habit, k, dateObj);
+      if (val === 1) { sumDone += mood; cntDone++; }
+      else { sumNotDone += mood; cntNotDone++; }
+    });
+    const avgDone = cntDone >= 2 ? sumDone / cntDone : null;
+    const avgNotDone = cntNotDone >= 2 ? sumNotDone / cntNotDone : null;
+    const diff = avgDone !== null && avgNotDone !== null ? avgDone - avgNotDone : 0;
+    return { habit, avgDone, avgNotDone, diff, cntDone };
+  })
+  .filter(c => c.avgDone !== null && c.avgNotDone !== null && Math.abs(c.diff) > 0.05)
+  .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+  .slice(0, 3);
+}
+
+function renderMoodSection() {
+  const container = document.getElementById('moodContent');
+  if (!container) return;
+  const moodEntries = Object.entries(DB.moods).sort(([a], [b]) => a.localeCompare(b));
+  if (moodEntries.length === 0) {
+    container.innerHTML = '<div class="mood-empty">No mood data yet — you\'ll be asked each morning!</div>';
+    return;
+  }
+
+  const last30 = moodEntries.slice(-30);
+  const avgMood = last30.reduce((s, [, v]) => s + v, 0) / last30.length;
+  const avgIdx = Math.round(avgMood);
+  const avgEmoji = MOOD_EMOJIS[avgIdx] || '😐';
+
+  const dotsHtml = last30.map(([k, m]) => {
+    const date = parseDate(k);
+    const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${MOOD_EMOJIS[m]}`;
+    return `<div class="mood-dot" style="background:${MOOD_COLORS[m]}"
+      onmouseenter="tipShow(event,'${tip}')" onmouseleave="tipHide()"></div>`;
+  }).join('');
+
+  const correlations = calcMoodCorrelations();
+  let corrHtml = '';
+  if (correlations.length >= 2) {
+    corrHtml = `<div class="mood-insights-grid">
+      ${correlations.map(c => {
+        const doneColor = c.diff > 0 ? '#34d399' : '#f87171';
+        const notDoneColor = c.diff > 0 ? '#f87171' : '#34d399';
+        const donePct = Math.round(((c.avgDone || 0) / 5) * 100);
+        const notDonePct = Math.round(((c.avgNotDone || 0) / 5) * 100);
+        const dir = c.diff > 0 ? '▲' : '▼';
+        const dirColor = c.diff > 0 ? '#34d399' : '#f87171';
+        return `<div class="mood-insight-card">
+          <div class="mood-insight-habit">
+            <span style="font-size:1.1rem">${c.habit.emoji}</span>
+            <span class="mood-insight-name">${c.habit.name}</span>
+          </div>
+          <div class="mood-insight-bars">
+            <div class="mood-insight-bar-row">
+              <span class="mood-insight-bar-label">Done</span>
+              <div class="mood-insight-bar-track">
+                <div class="mood-insight-bar-fill" style="width:${donePct}%;background:${doneColor}"></div>
+              </div>
+              <span class="mood-insight-score">${(c.avgDone||0).toFixed(1)}</span>
+            </div>
+            <div class="mood-insight-bar-row">
+              <span class="mood-insight-bar-label">Skip</span>
+              <div class="mood-insight-bar-track">
+                <div class="mood-insight-bar-fill" style="width:${notDonePct}%;background:${notDoneColor}"></div>
+              </div>
+              <span class="mood-insight-score">${(c.avgNotDone||0).toFixed(1)}</span>
+            </div>
+          </div>
+          <div class="mood-delta" style="color:${dirColor}">${dir} ${Math.abs(c.diff).toFixed(1)} pts impact on mood</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="mood-timeline-wrap">
+      <div class="mood-timeline-title">Last 30 days</div>
+      <div class="mood-dots-row">${dotsHtml}</div>
+      <div class="mood-avg-row">
+        <span class="mood-avg-emoji">${avgEmoji}</span>
+        <div>
+          <div class="mood-avg-score" style="color:${MOOD_COLORS[avgIdx]}">${avgMood.toFixed(1)} / 5</div>
+          <div class="mood-avg-text">average mood</div>
+        </div>
+      </div>
+    </div>
+    ${corrHtml}
+  `;
+}
+
+function renderAchievements() {
+  const container = document.getElementById('achievementsGrid');
+  if (!container) return;
+  container.innerHTML = ACHIEVEMENTS.map((a, i) => {
+    const unlocked = DB.unlockedAchievements.includes(a.id);
+    return `<div class="achievement-badge ${unlocked ? 'unlocked' : 'locked'}" style="animation-delay:${i * .05}s">
+      ${unlocked ? '<div class="ach-unlocked-badge">✓</div>' : ''}
+      <div class="ach-emoji">${a.emoji}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function applyZenMode() {
+  if (!DB.profile.zenMode) return;
+  const t = today();
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  HABITS.forEach(h => {
+    let isDone = false;
+    if (h.type === 'water') isDone = isWaterDone(t);
+    else if (h.type === 'weekly') isDone = isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate));
+    else if (h.type === 'bad') isDone = DB.habits[h.id].logs[t] !== 'fail';
+    else isDone = DB.habits[h.id].logs[t] === 'done' || DB.habits[h.id].logs[t] === 'joker';
+    if (isDone) {
+      const el = document.querySelector(`[data-habit="${h.id}"]`);
+      if (el) requestAnimationFrame(() => el.classList.add('zen-collapse'));
+    }
+  });
+}
 
 function openProfile() {
   document.getElementById('pseudoInput').value = DB.profile.name || '';
+  const soundOn = DB.profile.soundEnabled !== false;
+  const zenOn = !!DB.profile.zenMode;
+  const sToggle = document.getElementById('soundToggle');
+  const zToggle = document.getElementById('zenToggle');
+  sToggle.textContent = soundOn ? 'ON' : 'OFF';
+  sToggle.className = `pref-toggle ${soundOn ? 'on' : 'off'}`;
+  zToggle.textContent = zenOn ? 'ON' : 'OFF';
+  zToggle.className = `pref-toggle ${zenOn ? 'on' : 'off'}`;
   document.getElementById('profileModal').classList.add('open');
   setTimeout(() => document.getElementById('pseudoInput').focus(), 80);
 }
@@ -126,6 +652,30 @@ function saveProfileName() {
   saveData();
   renderHeader();
   closeProfile();
+}
+
+function togglePref(pref) {
+  if (pref === 'sound') {
+    DB.profile.soundEnabled = DB.profile.soundEnabled === false ? true : false;
+    const on = DB.profile.soundEnabled;
+    const btn = document.getElementById('soundToggle');
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.className = `pref-toggle ${on ? 'on' : 'off'}`;
+  } else if (pref === 'zen') {
+    DB.profile.zenMode = !DB.profile.zenMode;
+    const on = DB.profile.zenMode;
+    const btn = document.getElementById('zenToggle');
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.className = `pref-toggle ${on ? 'on' : 'off'}`;
+    if (on) {
+      applyZenMode();
+    } else {
+      document.querySelectorAll('.habit-card.zen-collapse').forEach(el => {
+        el.classList.remove('zen-collapse');
+      });
+    }
+  }
+  saveData();
 }
 
 function confirmReset() {
@@ -227,25 +777,47 @@ function toggleHabit(id) {
 
   if (habit.type === 'weekly') {
     const cur = DB.habits[id].logs[t];
+    const completing = cur !== 'done';
     if (cur === 'done') delete DB.habits[id].logs[t];
     else DB.habits[id].logs[t] = 'done';
+    if (completing) {
+      giveXP(20);
+      playSound('done');
+    } else {
+      playSound('undo');
+    }
     saveData();
-    if (countDoneToday() === HABITS.length) launchConfetti();
+    checkAchievements();
+    if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
     renderAll();
     flashCard(id);
     return;
   }
 
-  const cur = DB.habits[id].logs[t];
   if (habit.type === 'bad') {
-    if (cur === 'fail') delete DB.habits[id].logs[t];
-    else DB.habits[id].logs[t] = 'fail';
+    const cur = DB.habits[id].logs[t];
+    if (cur === 'fail') {
+      delete DB.habits[id].logs[t];
+      playSound('undo');
+    } else {
+      DB.habits[id].logs[t] = 'fail';
+      playSound('fail');
+    }
   } else {
-    if (cur === 'done') delete DB.habits[id].logs[t];
-    else DB.habits[id].logs[t] = 'done';
+    const cur = DB.habits[id].logs[t];
+    const completing = cur !== 'done';
+    if (cur === 'done') {
+      delete DB.habits[id].logs[t];
+      playSound('undo');
+    } else {
+      DB.habits[id].logs[t] = 'done';
+      giveXP(10);
+      playSound('done');
+    }
   }
   saveData();
-  if (countDoneToday() === HABITS.length) launchConfetti();
+  checkAchievements();
+  if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
   renderAll();
   flashCard(id);
 }
@@ -254,11 +826,22 @@ function addWater() {
   const t = today();
   const cur = getWaterMl(t);
   const next = cur >= WATER_MAX ? 0 : cur + WATER_STEP;
-  if (next === 0) delete DB.habits['water'].logs[t];
-  else DB.habits['water'].logs[t] = next;
+  if (next === 0) {
+    delete DB.habits['water'].logs[t];
+    playSound('undo');
+  } else {
+    DB.habits['water'].logs[t] = next;
+    if (next >= WATER_GOAL && cur < WATER_GOAL) {
+      playSound('water');
+      giveXP(15);
+    } else if (next < WATER_GOAL) {
+      playSound('done');
+    }
+  }
   saveData();
+  checkAchievements();
   if (next >= WATER_GOAL && cur < WATER_GOAL) {
-    if (countDoneToday() === HABITS.length) launchConfetti();
+    if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
     flashCard('water');
   }
   renderAll();
@@ -273,9 +856,7 @@ function useJoker(id) {
   if (yest < DB.createdAt) return;
   const yestLog = DB.habits[id].logs[yest];
   if (yestLog !== 'done' && yestLog !== 'joker') {
-    DB.habits[id].logs[yest] = 'joker';
-    saveData();
-    renderAll();
+    openJokerModal(id);
   }
 }
 
@@ -313,6 +894,17 @@ function renderHeader() {
   const scoreEl = document.getElementById('scoreNum');
   scoreEl.textContent = `${done}/${total}`;
   scoreEl.style.color = done === total ? '#34d399' : done >= Math.ceil(total/2) ? '#fbbf24' : 'var(--text)';
+
+  const xp = DB.xp || 0;
+  const level = calcLevel(xp);
+  const prog = xpProgress(xp);
+  const levelName = LEVEL_NAMES[level - 1] || '';
+  document.getElementById('xpLevel').textContent = `Lv.${level}`;
+  document.getElementById('xpTotal').textContent = `${xp} XP`;
+  document.getElementById('xpBarFill').style.width = `${prog.pct}%`;
+  document.getElementById('xpNext').textContent = prog.needed > 0
+    ? `${prog.needed} XP to ${LEVEL_NAMES[level] || 'max'}`
+    : `${levelName} — Max Level`;
 }
 
 function renderHabits() {
@@ -1081,7 +1673,10 @@ function launchConfetti() {
 function renderAll() {
   renderHeader();
   renderHabits();
+  applyZenMode();
   renderStreaks();
+  renderAchievements();
+  renderMoodSection();
   renderHeatmap();
   drawLineChart();
   drawDayChart();
@@ -1090,6 +1685,8 @@ function renderAll() {
 }
 
 renderAll();
+checkAchievements();
+checkDailyMood();
 
 setInterval(() => {
   const n = new Date();

@@ -17,6 +17,16 @@
       <div class="subdate" id="subdate">—</div>
     </div>
     <div class="header-right">
+      <div class="xp-display" id="xpDisplay">
+        <div class="xp-top-row">
+          <span class="xp-level-badge" id="xpLevel">Lv.1</span>
+          <span class="xp-total" id="xpTotal">0 XP</span>
+        </div>
+        <div class="xp-bar-wrap">
+          <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+        </div>
+        <div class="xp-next" id="xpNext">100 to next level</div>
+      </div>
       <div class="score-orb">
         <div class="score-num" id="scoreNum">0/10</div>
         <div class="score-lbl">goals today</div>
@@ -31,6 +41,14 @@
   <section>
     <div class="sec-label">Streaks &amp; Jokers</div>
     <div class="streaks-grid" id="streaksGrid"></div>
+  </section>
+  <section>
+    <div class="sec-label">Achievements</div>
+    <div class="achievements-grid" id="achievementsGrid"></div>
+  </section>
+  <section id="moodSection">
+    <div class="sec-label">Mood &amp; Correlations</div>
+    <div id="moodContent"><div class="mood-empty">No mood data yet — you'll be asked each morning!</div></div>
   </section>
   <section>
     <div class="sec-label">History — 16 weeks</div>
@@ -89,10 +107,68 @@
     </div>
     <div class="modal-divider"></div>
     <div class="modal-section">
+      <label class="modal-label">Preferences</label>
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-icon">🔊</span>
+          <div>
+            <div class="pref-label-text">Sound effects</div>
+            <div class="pref-hint">Auditory feedback on each action</div>
+          </div>
+        </div>
+        <button class="pref-toggle on" id="soundToggle" onclick="togglePref('sound')">ON</button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-icon">🧘</span>
+          <div>
+            <div class="pref-label-text">Zen mode</div>
+            <div class="pref-hint">Completed habits collapse — clear the board</div>
+          </div>
+        </div>
+        <button class="pref-toggle off" id="zenToggle" onclick="togglePref('zen')">OFF</button>
+      </div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-section">
       <div class="modal-label modal-danger-lbl">⚠ Danger zone</div>
       <div class="modal-hint" style="margin-bottom:10px">Permanently erases all logs, streaks and settings. This cannot be undone.</div>
       <button class="modal-reset-btn" onclick="confirmReset()">🗑 Reset all data</button>
     </div>
+  </div>
+</div>
+<div id="jokerModal" class="modal-overlay" onclick="closeJokerModal()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">🃏 Use a Joker</div>
+      <button class="modal-x" onclick="closeJokerModal()">✕</button>
+    </div>
+    <div class="modal-section">
+      <label class="modal-label">What held you back yesterday?</label>
+      <div class="joker-reasons-grid" id="jokerReasonsList"></div>
+    </div>
+    <div class="modal-divider"></div>
+    <button class="joker-confirm-btn" id="jokerConfirmBtn" onclick="confirmJoker()" disabled>Use Joker for Yesterday</button>
+  </div>
+</div>
+<div id="moodModal" class="modal-overlay">
+  <div class="mood-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">How was yesterday? 🌙</div>
+      <button class="modal-x" onclick="closeMoodModal()">✕</button>
+    </div>
+    <div class="mood-date-label" id="moodDateLabel"></div>
+    <div class="mood-emoji-row">
+      <button class="mood-emoji-btn" data-value="1" onclick="selectMood(1)">😫</button>
+      <button class="mood-emoji-btn" data-value="2" onclick="selectMood(2)">😕</button>
+      <button class="mood-emoji-btn" data-value="3" onclick="selectMood(3)">😐</button>
+      <button class="mood-emoji-btn" data-value="4" onclick="selectMood(4)">😊</button>
+      <button class="mood-emoji-btn" data-value="5" onclick="selectMood(5)">🤩</button>
+    </div>
+    <div class="mood-labels-row">
+      <span>Rough</span><span></span><span>Neutral</span><span></span><span>Amazing</span>
+    </div>
+    <button class="mood-skip-btn" onclick="closeMoodModal()">Skip for now</button>
   </div>
 </div>
 <div id="tooltip"></div>
