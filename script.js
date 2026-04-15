@@ -3,11 +3,11 @@ const HABITS = [
   { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',   color:'#e879f9', jokerLimit:3, weekdayOnly:false },
   { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',   color:'#34d399', jokerLimit:3, weekdayOnly:true  },
   { id:'work',     name:'Work',              emoji:'💼', type:'good',   color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
-  { id:'noscroll', name:'No Scroll',         emoji:'📵', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
-  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
-  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
-  { id:'water',    name:'Water',             emoji:'💧', type:'water',  color:'#38bdf8', jokerLimit:2, weekdayOnly:false },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:2, weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:3, weekdayOnly:false },
+  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
+  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
+  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
+  { id:'water',    name:'Water',             emoji:'💧', type:'water',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
   { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false },
 ];
 
