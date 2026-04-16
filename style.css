@@ -762,6 +762,9 @@
       animation: fadeUp .4s ease both;
       user-select: none;
       max-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .habit-card::before {
@@ -1230,6 +1233,76 @@
       vertical-align: middle;
       white-space: nowrap;
     }
+
+    .h-card-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      width: 100%;
+    }
+
+    .h-card-footer .h-btn { flex: 1; margin-top: 0; }
+
+    .pomo-wrap { flex-shrink: 0; }
+
+    .pomo-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--s4);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-size: .95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .18s;
+    }
+    .pomo-btn:hover {
+      background: var(--s3);
+      color: var(--text);
+      border-color: var(--border2);
+      transform: scale(1.08);
+    }
+
+    .pomo-running {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pomo-ring {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+    }
+
+    .pomo-time {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text);
+      min-width: 32px;
+      letter-spacing: .02em;
+    }
+
+    .pomo-stop-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: color-mix(in srgb, #f87171 15%, transparent);
+      border: 1px solid color-mix(in srgb, #f87171 40%, transparent);
+      color: #f87171;
+      font-size: .6rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .pomo-stop-btn:hover { background: color-mix(in srgb, #f87171 30%, transparent); }
 
     @media (max-width: 560px) {
       body { padding: 16px 14px 50px; }

@@ -130,6 +130,8 @@ if (!DB.unlockedAchievements) DB.unlockedAchievements = [];
 if (!DB.jokerReasons) DB.jokerReasons = {};
 if (!DB.moods) DB.moods = {};
 if (!DB.perfectDaysClaimed) DB.perfectDaysClaimed = [];
+if (!DB.penaltiesApplied) DB.penaltiesApplied = [];
+if (DB.profile.hardcoreMode === undefined) DB.profile.hardcoreMode = false;
 
 const audioCtx = (() => {
   try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
@@ -276,6 +278,101 @@ function giveXP(amount) {
       showToast(`🎉 Level Up! You're now ${name} — Lv.${newLevel}`, 4000);
     }, 300);
   }
+}
+
+function loseXP(amount) {
+  DB.xp = Math.max(0, (DB.xp || 0) - amount);
+  saveData();
+}
+
+function checkDailyPenalties() {
+  if (!DB.profile.hardcoreMode) return;
+  const yest = fmtDate(addDays(new Date(), -1));
+  if (yest < DB.createdAt) return;
+  if (DB.penaltiesApplied.includes(yest)) return;
+  DB.penaltiesApplied.push(yest);
+  const yestDate = parseDate(yest);
+  let missed = 0;
+  HABITS.forEach(h => {
+    if (h.type !== 'good') return;
+    if (h.weekdayOnly && isWeekend(yestDate)) return;
+    const log = DB.habits[h.id].logs[yest];
+    if (log !== 'done' && log !== 'joker') missed++;
+  });
+  if (missed > 0) {
+    const penalty = missed * 5;
+    loseXP(penalty);
+    saveData();
+    setTimeout(() => {
+      playSound('fail');
+      showToast(`⚡ Hardcore: -${penalty} XP — ${missed} habit${missed > 1 ? 's' : ''} missed yesterday`, 4000);
+    }, 800);
+  }
+}
+
+const POMO_DURATION = 25 * 60;
+let pomodoroTimers = {};
+
+function startPomodoro(id) {
+  if (pomodoroTimers[id]) return;
+  const habit = HABITS.find(h => h.id === id);
+  if (!habit || habit.type !== 'good') return;
+  pomodoroTimers[id] = { remaining: POMO_DURATION };
+  updatePomoDisplay(id);
+  pomodoroTimers[id].intervalId = setInterval(() => {
+    pomodoroTimers[id].remaining--;
+    updatePomoDisplay(id);
+    if (pomodoroTimers[id].remaining <= 0) {
+      clearInterval(pomodoroTimers[id].intervalId);
+      delete pomodoroTimers[id];
+      updatePomoDisplay(id);
+      playSound('fanfare');
+      showToast(`⏱️ Pomodoro terminé — ${habit.emoji} ${habit.name} validé !`, 4000);
+      const t = today();
+      if (DB.habits[id].logs[t] !== 'done') {
+        DB.habits[id].logs[t] = 'done';
+        giveXP(10);
+        saveData();
+        checkAchievements();
+        if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+        renderAll();
+      }
+    }
+  }, 1000);
+  updatePomoDisplay(id);
+}
+
+function stopPomodoro(id) {
+  if (!pomodoroTimers[id]) return;
+  clearInterval(pomodoroTimers[id].intervalId);
+  delete pomodoroTimers[id];
+  updatePomoDisplay(id);
+}
+
+function updatePomoDisplay(id) {
+  const card = document.querySelector(`[data-habit="${id}"]`);
+  if (!card) return;
+  const state = pomodoroTimers[id];
+  const wrap = card.querySelector('.pomo-wrap');
+  if (!wrap) return;
+  if (!state) {
+    wrap.innerHTML = `<button class="pomo-btn" onclick="event.stopPropagation(); startPomodoro('${id}')" title="Démarrer un Pomodoro (25 min)">⏱️</button>`;
+    return;
+  }
+  const m = Math.floor(state.remaining / 60);
+  const s = String(state.remaining % 60).padStart(2, '0');
+  const pct = Math.round((1 - state.remaining / POMO_DURATION) * 100);
+  wrap.innerHTML = `
+    <div class="pomo-running">
+      <svg class="pomo-ring" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--s4)" stroke-width="3"/>
+        <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--hc,#818cf8)" stroke-width="3"
+          stroke-dasharray="${pct} 100" stroke-linecap="round"
+          transform="rotate(-90 18 18)" pathLength="100"/>
+      </svg>
+      <span class="pomo-time">${m}:${s}</span>
+      <button class="pomo-stop-btn" onclick="event.stopPropagation(); stopPomodoro('${id}')" title="Arrêter">✕</button>
+    </div>`;
 }
 
 function checkPerfectWeek() {
@@ -633,12 +730,18 @@ function openProfile() {
   document.getElementById('pseudoInput').value = DB.profile.name || '';
   const soundOn = DB.profile.soundEnabled !== false;
   const zenOn = !!DB.profile.zenMode;
+  const hardcoreOn = !!DB.profile.hardcoreMode;
   const sToggle = document.getElementById('soundToggle');
   const zToggle = document.getElementById('zenToggle');
+  const hToggle = document.getElementById('hardcoreToggle');
   sToggle.textContent = soundOn ? 'ON' : 'OFF';
   sToggle.className = `pref-toggle ${soundOn ? 'on' : 'off'}`;
   zToggle.textContent = zenOn ? 'ON' : 'OFF';
   zToggle.className = `pref-toggle ${zenOn ? 'on' : 'off'}`;
+  if (hToggle) {
+    hToggle.textContent = hardcoreOn ? 'ON' : 'OFF';
+    hToggle.className = `pref-toggle ${hardcoreOn ? 'on' : 'off'}`;
+  }
   document.getElementById('profileModal').classList.add('open');
   setTimeout(() => document.getElementById('pseudoInput').focus(), 80);
 }
@@ -674,6 +777,12 @@ function togglePref(pref) {
         el.classList.remove('zen-collapse');
       });
     }
+  } else if (pref === 'hardcore') {
+    DB.profile.hardcoreMode = !DB.profile.hardcoreMode;
+    const on = DB.profile.hardcoreMode;
+    const btn = document.getElementById('hardcoreToggle');
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.className = `pref-toggle ${on ? 'on' : 'off'}`;
   }
   saveData();
 }
@@ -976,11 +1085,27 @@ function renderHabits() {
     const done = log === 'done' || log === 'joker';
     const cardCls = done ? 'habit-card done' : 'habit-card';
     const btnText = done ? '✓ Completed!' : 'Mark as done';
+    const pomoRunning = !!pomodoroTimers[h.id];
+    const pomoHtml = pomoRunning
+      ? `<div class="pomo-wrap"><div class="pomo-running">
+          <svg class="pomo-ring" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--s4)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="${h.color}" stroke-width="3"
+              stroke-dasharray="${Math.round((1-(pomodoroTimers[h.id].remaining/POMO_DURATION))*100)} 100"
+              stroke-linecap="round" transform="rotate(-90 18 18)" pathLength="100"/>
+          </svg>
+          <span class="pomo-time">${Math.floor(pomodoroTimers[h.id].remaining/60)}:${String(pomodoroTimers[h.id].remaining%60).padStart(2,'0')}</span>
+          <button class="pomo-stop-btn" onclick="event.stopPropagation(); stopPomodoro('${h.id}')" title="Arrêter">✕</button>
+        </div></div>`
+      : `<div class="pomo-wrap"><button class="pomo-btn" onclick="event.stopPropagation(); startPomodoro('${h.id}')" title="Démarrer un Pomodoro (25 min)">⏱️</button></div>`;
     return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
               data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
       <span class="h-emoji">${h.emoji}</span>
       <div class="h-name">${h.name}${h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : ''}</div>
-      <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+      <div class="h-card-footer">
+        <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+        ${pomoHtml}
+      </div>
     </div>`;
   }).join('');
 }
@@ -1687,6 +1812,7 @@ function renderAll() {
 renderAll();
 checkAchievements();
 checkDailyMood();
+checkDailyPenalties();
 
 setInterval(() => {
   const n = new Date();
