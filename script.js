@@ -14,17 +14,15 @@ const HABITS = [
 const WATER_GOAL = 1500;
 const WATER_STEP = 250;
 const WATER_MAX  = 3000;
-
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
 const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
-
 const JOKER_REASONS = [
-  { id: 'sick',    label: '🤒 Malade' },
-  { id: 'work',    label: '💼 Trop de travail' },
-  { id: 'social',  label: '🎉 Soirée imprévue' },
-  { id: 'tired',   label: '😴 Épuisé' },
-  { id: 'travel',  label: '✈️ Voyage' },
-  { id: 'other',   label: '❓ Autre' },
+  { id: 'sick',    label: '🤒 Sick' },
+  { id: 'work',    label: '💼 Too much work' },
+  { id: 'social',  label: '🎉 Nightout' },
+  { id: 'tired',   label: '😴 Tired' },
+  { id: 'travel',  label: '✈️ Travel' },
+  { id: 'other',   label: '❓ Other' },
 ];
 
 const MOOD_EMOJIS  = ['', '😫', '😕', '😐', '😊', '🤩'];
@@ -417,23 +415,23 @@ const ACHIEVEMENTS = [
     check: () => Object.values(DB.habits).some(h => Object.keys(h.logs).length > 0)
   },
   {
-    id: 'le_chameau',
+    id: 'camel',
     emoji: '🐫',
-    name: 'Le Chameau',
+    name: 'Camel',
     desc: '7 days hitting the water goal in a row',
     check: () => { const h = HABITS.find(x => x.id === 'water'); return h && calcStreak(h).current >= 7; }
   },
   {
-    id: 'semaine_parfaite',
+    id: 'perfect_week',
     emoji: '⭐',
-    name: 'Semaine Parfaite',
+    name: 'Perfect Week',
     desc: '100% success on a complete week',
     check: () => checkPerfectWeek()
   },
   {
-    id: 'garde_de_fer',
-    emoji: '🛡️',
-    name: 'Garde de Fer',
+    id: 'king',
+    emoji: '👑',
+    name: 'King',
     desc: 'No bad habit triggered for 14 days',
     check: () => {
       const bads = HABITS.filter(h => h.type === 'bad');
