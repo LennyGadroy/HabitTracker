@@ -1,5 +1,5 @@
-# 🌙 HabitTracker - Application Gamifiée de Suivi d'Habitudes
-**HabitTracker** est une application web front-end de suivi d'habitudes qui utilise les principes de la gamification pour vous aider à rester discipliné. Conçue en HTML, CSS et JavaScript Vanilla, elle ne nécessite aucun serveur et sauvegarde toutes vos données directement dans votre navigateur.
+# 🌙 HabitsTracker - Application Gamifiée de Suivi d'Habitudes
+**HabitsTracker** est une application web front-end de suivi d'habitudes qui utilise les principes de la gamification pour vous aider à rester discipliné. Conçue en HTML, CSS et JavaScript Vanilla, elle ne nécessite aucun serveur et sauvegarde toutes vos données directement dans votre navigateur.
 
 ---
 
