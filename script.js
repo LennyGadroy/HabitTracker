@@ -11,11 +11,13 @@ const HABITS = [
   { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false },
 ];
 
-const WATER_GOAL = 1500;
+const WATER_GOAL = 2000;
 const WATER_STEP = 250;
-const WATER_MAX  = 3000;
+const WATER_MAX  = 5000;
+
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
 const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
+
 const JOKER_REASONS = [
   { id: 'sick',    label: '🤒 Sick' },
   { id: 'work',    label: '💼 Too much work' },
@@ -574,8 +576,18 @@ function openMoodModal(dateKey) {
   const date = parseDate(dateKey);
   document.getElementById('moodDateLabel').textContent =
     `${DAY_FULL[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
-  document.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.mood-emoji-btn').forEach(b => {
+    const already = DB.moods[dateKey];
+    b.classList.toggle('selected', already !== undefined && parseInt(b.dataset.value) === already);
+  });
   document.getElementById('moodModal').classList.add('open');
+}
+
+function openMoodManual() {
+  const yest = fmtDate(addDays(new Date(), -1));
+  const t = today();
+  const dateKey = yest >= DB.createdAt ? yest : t;
+  openMoodModal(dateKey);
 }
 
 function closeMoodModal() {

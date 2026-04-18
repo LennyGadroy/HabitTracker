@@ -738,6 +738,33 @@
       background: var(--border);
     }
 
+    .sec-label-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sec-action-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .65rem;
+      font-weight: 500;
+      letter-spacing: .04em;
+      text-transform: none;
+      color: var(--muted);
+      background: var(--s3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .sec-action-btn:hover {
+      background: color-mix(in srgb, #818cf8 15%, var(--s3));
+      border-color: #818cf8;
+      color: var(--text);
+    }
+
     section { margin-bottom: 48px; }
 
     .habits-grid {
