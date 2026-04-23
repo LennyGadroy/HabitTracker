@@ -7,13 +7,13 @@ const HABITS = [
   { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
   { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
   { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
-  { id:'water',    name:'Water',             emoji:'💧', type:'water',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
+  { id:'drink',    name:'drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
   { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false },
 ];
 
-const WATER_GOAL = 2000;
-const WATER_STEP = 250;
-const WATER_MAX  = 5000;
+const DRINK_GOAL = 2000;
+const DRINK_STEP = 250;
+const DRINK_MAX  = 5000;
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
 const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
@@ -55,13 +55,13 @@ const addDays = (d, n) => {
 
 const today = () => fmtDate(new Date());
 
-function getWaterMl(dateKey) {
-  const val = DB.habits['water'].logs[dateKey];
+function getDrinkMl(dateKey) {
+  const val = DB.habits['drink'].logs[dateKey];
   if (typeof val === 'number') return val;
-  if (val === 'done') return WATER_GOAL;
+  if (val === 'done') return DRINK_GOAL;
   return 0;
 }
-function isWaterDone(dateKey) { return getWaterMl(dateKey) >= WATER_GOAL; }
+function isDrinkDone(dateKey) { return getDrinkMl(dateKey) >= DRINK_GOAL; }
 
 function getWeekMonday(dateObj) {
   const d = new Date(dateObj);
@@ -96,7 +96,7 @@ function calcWeeklyStreak(habit) {
 }
 
 function getHabitDayValue(habit, dateKey, dateObj) {
-  if (habit.type === 'water') return isWaterDone(dateKey) ? 1 : 0;
+  if (habit.type === 'drink') return isDrinkDone(dateKey) ? 1 : 0;
   if (habit.type === 'weekly') {
     const weekMonday = getWeekMonday(dateObj || parseDate(dateKey));
     return isWeeklyDoneForWeek(habit.id, weekMonday) ? 1 : 0;
@@ -178,7 +178,7 @@ function playSound(type) {
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
       osc.start(audioCtx.currentTime);
       osc.stop(audioCtx.currentTime + 0.35);
-    } else if (type === 'water') {
+    } else if (type === 'drink') {
       [523, 659].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -420,8 +420,8 @@ const ACHIEVEMENTS = [
     id: 'camel',
     emoji: '🐫',
     name: 'Camel',
-    desc: '7 days hitting the water goal in a row',
-    check: () => { const h = HABITS.find(x => x.id === 'water'); return h && calcStreak(h).current >= 7; }
+    desc: '7 days hitting the drink goal in a row',
+    check: () => { const h = HABITS.find(x => x.id === 'drink'); return h && calcStreak(h).current >= 7; }
   },
   {
     id: 'perfect_week',
@@ -725,7 +725,7 @@ function applyZenMode() {
   todayDate.setHours(0, 0, 0, 0);
   HABITS.forEach(h => {
     let isDone = false;
-    if (h.type === 'water') isDone = isWaterDone(t);
+    if (h.type === 'drink') isDone = isDrinkDone(t);
     else if (h.type === 'weekly') isDone = isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate));
     else if (h.type === 'bad') isDone = DB.habits[h.id].logs[t] !== 'fail';
     else isDone = DB.habits[h.id].logs[t] === 'done' || DB.habits[h.id].logs[t] === 'joker';
@@ -847,7 +847,7 @@ function calcStreak(habit) {
   }
 
   const logDone = k => {
-    if (habit.type === 'water') return isWaterDone(k);
+    if (habit.type === 'drink') return isDrinkDone(k);
     const s = logs[k];
     return s === 'done' || s === 'joker';
   };
@@ -892,7 +892,7 @@ function toggleHabit(id) {
   const habit = HABITS.find(h => h.id === id);
   const t = today();
 
-  if (habit.type === 'water') { addWater(); return; }
+  if (habit.type === 'drink') { addDrink(); return; }
 
   if (habit.type === 'weekly') {
     const cur = DB.habits[id].logs[t];
@@ -941,27 +941,27 @@ function toggleHabit(id) {
   flashCard(id);
 }
 
-function addWater() {
+function addDrink() {
   const t = today();
-  const cur = getWaterMl(t);
-  const next = cur >= WATER_MAX ? 0 : cur + WATER_STEP;
+  const cur = getDrinkMl(t);
+  const next = cur >= DRINK_MAX ? 0 : cur + DRINK_STEP;
   if (next === 0) {
-    delete DB.habits['water'].logs[t];
+    delete DB.habits['drink'].logs[t];
     playSound('undo');
   } else {
-    DB.habits['water'].logs[t] = next;
-    if (next >= WATER_GOAL && cur < WATER_GOAL) {
-      playSound('water');
+    DB.habits['drink'].logs[t] = next;
+    if (next >= DRINK_GOAL && cur < DRINK_GOAL) {
+      playSound('drink');
       giveXP(15);
-    } else if (next < WATER_GOAL) {
+    } else if (next < DRINK_GOAL) {
       playSound('done');
     }
   }
   saveData();
   checkAchievements();
-  if (next >= WATER_GOAL && cur < WATER_GOAL) {
+  if (next >= DRINK_GOAL && cur < DRINK_GOAL) {
     if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
-    flashCard('water');
+    flashCard('drink');
   }
   renderAll();
 }
@@ -984,7 +984,7 @@ function countDoneToday() {
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
   return HABITS.reduce((n, h) => {
-    if (h.type === 'water') return n + (isWaterDone(t) ? 1 : 0);
+    if (h.type === 'drink') return n + (isDrinkDone(t) ? 1 : 0);
     if (h.type === 'weekly') {
       return n + (isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate)) ? 1 : 0);
     }
@@ -1034,24 +1034,24 @@ function renderHabits() {
   document.getElementById('habitsGrid').innerHTML = HABITS.map((h, i) => {
     const delay = `animation-delay:${i * .07}s`;
 
-    if (h.type === 'water') {
-      const ml = getWaterMl(t);
-      const done = ml >= WATER_GOAL;
-      const pct = Math.min(100, Math.round((ml / WATER_GOAL) * 100));
+    if (h.type === 'drink') {
+      const ml = getDrinkMl(t);
+      const done = ml >= DRINK_GOAL;
+      const pct = Math.min(100, Math.round((ml / DRINK_GOAL) * 100));
       const cardCls = done ? 'habit-card done' : 'habit-card';
       const btnText = done
         ? `✓ Goal! +250ml (${ml}ml)`
         : `+ 250ml`;
       return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
-                data-habit="${h.id}" onclick="addWater()">
+                data-habit="${h.id}" onclick="addDrink()">
         <span class="h-emoji">${h.emoji}</span>
         <div class="h-name">${h.name}
-          <span class="water-amount">${ml} / ${WATER_GOAL} ml</span>
+          <span class="drink-amount">${ml} / ${DRINK_GOAL} ml</span>
         </div>
-        <div class="water-track">
-          <div class="water-fill" style="width:${pct}%;background:${h.color}"></div>
+        <div class="drink-track">
+          <div class="drink-fill" style="width:${pct}%;background:${h.color}"></div>
         </div>
-        <button class="h-btn" onclick="event.stopPropagation(); addWater()">${btnText}</button>
+        <button class="h-btn" onclick="event.stopPropagation(); addDrink()">${btnText}</button>
       </div>`;
     }
 
@@ -1164,7 +1164,7 @@ function renderStreaks() {
     };
     const sublabel = h.type === 'bad'
       ? (sublabelMap[h.id] || 'days clean')
-      : h.type === 'water'
+      : h.type === 'drink'
         ? 'days hitting goal'
         : h.weekdayOnly ? 'weekdays in a row' : 'day streak';
 
@@ -1254,11 +1254,11 @@ function renderHeatmap() {
 
         const log = logs[k];
 
-        if (habit.type === 'water') {
-          const ml = typeof log === 'number' ? log : (log === 'done' ? WATER_GOAL : 0);
+        if (habit.type === 'drink') {
+          const ml = typeof log === 'number' ? log : (log === 'done' ? DRINK_GOAL : 0);
           let bg, opacity = 1;
           let statusLabel;
-          if (ml >= WATER_GOAL) {
+          if (ml >= DRINK_GOAL) {
             bg = habit.color;
             statusLabel = `✓ ${ml}ml`;
           } else if (ml > 0) {
