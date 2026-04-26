@@ -695,7 +695,7 @@
       font-family: 'DM Mono', monospace;
     }
 
-    .water-amount {
+    .drink-amount {
       display: block;
       font-size: .72rem;
       color: var(--muted);
@@ -704,7 +704,7 @@
       font-weight: 400;
     }
 
-    .water-track {
+    .drink-track {
       height: 4px;
       background: var(--s4);
       border-radius: 99px;
@@ -713,7 +713,7 @@
       margin-top: 2px;
     }
 
-    .water-fill {
+    .drink-fill {
       height: 100%;
       border-radius: 99px;
       transition: width .3s ease;
@@ -839,8 +839,9 @@
     }
     .habit-card.zen-collapse .h-emoji,
     .habit-card.zen-collapse .h-btn,
-    .habit-card.zen-collapse .water-track,
-    .habit-card.zen-collapse .water-amount,
+    .habit-card.zen-collapse .drink-track,
+    .habit-card.zen-collapse .drink-amount,
+    .habit-card.zen-collapse .h-card-footer,
     .habit-card.zen-collapse .weekday-badge {
       display: none;
     }

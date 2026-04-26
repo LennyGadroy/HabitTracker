@@ -1,14 +1,15 @@
 const HABITS = [
-  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',   color:'#818cf8', jokerLimit:3, weekdayOnly:true  },
+  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',   color:'#818cf8', jokerLimit:3, activeDays:[0,1,2,3,4] },
   { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',   color:'#e879f9', jokerLimit:3, weekdayOnly:false },
   { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',   color:'#34d399', jokerLimit:3, weekdayOnly:true  },
   { id:'work',     name:'Work',              emoji:'💼', type:'good',   color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:3, weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
   { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
   { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
   { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
-  { id:'drink',    name:'drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
-  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false },
+  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'good',   color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
 ];
 
 const DRINK_GOAL = 2000;
@@ -31,6 +32,11 @@ const MOOD_EMOJIS  = ['', '😫', '😕', '😐', '😊', '🤩'];
 const MOOD_COLORS  = ['', '#f87171', '#fb923c', '#fbbf24', '#86efac', '#34d399'];
 
 const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
+const isDayActive = (habit, dateObj) => {
+  if (habit.activeDays) return habit.activeDays.includes(dateObj.getDay());
+  if (habit.weekdayOnly) return !isWeekend(dateObj);
+  return true;
+};
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_SHORT   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DAY_FULL    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -295,7 +301,7 @@ function checkDailyPenalties() {
   let missed = 0;
   HABITS.forEach(h => {
     if (h.type !== 'good') return;
-    if (h.weekdayOnly && isWeekend(yestDate)) return;
+    if (!isDayActive(h, yestDate)) return;
     const log = DB.habits[h.id].logs[yest];
     if (log !== 'done' && log !== 'joker') missed++;
   });
@@ -334,7 +340,7 @@ function startPomodoro(id) {
         giveXP(10);
         saveData();
         checkAchievements();
-        if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+        if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
         renderAll();
       }
     }
@@ -389,7 +395,8 @@ function checkPerfectWeek() {
       const k = fmtDate(date);
       if (k < DB.createdAt) { perfect = false; break; }
       for (const h of HABITS) {
-        if (h.weekdayOnly && isWeekend(date)) continue;
+        if (h.optional) continue;
+        if (!isDayActive(h, date)) continue;
         if (getHabitDayValue(h, k, date) !== 1) { perfect = false; break; }
       }
       if (!perfect) break;
@@ -503,7 +510,8 @@ function checkAchievements() {
 function checkPerfectDayBonus() {
   const t = today();
   if (DB.perfectDaysClaimed.includes(t)) return;
-  if (countDoneToday() === HABITS.length) {
+  const required = HABITS.filter(h => !h.optional).length;
+  if (countDoneToday() === required) {
     DB.perfectDaysClaimed.push(t);
     giveXP(50);
     setTimeout(() => showToast('🌟 Perfect Day! +50 XP bonus', 3500), 600);
@@ -565,10 +573,10 @@ let currentMoodDate = null;
 function checkDailyMood() {
   if (sessionStorage.getItem('moodChecked')) return;
   sessionStorage.setItem('moodChecked', '1');
-  const yest = fmtDate(addDays(new Date(), -1));
-  if (yest < DB.createdAt) return;
-  if (DB.moods[yest] !== undefined) return;
-  setTimeout(() => openMoodModal(yest), 2000);
+  const t = today();
+  if (t < DB.createdAt) return;
+  if (DB.moods[t] !== undefined) return;
+  setTimeout(() => openMoodModal(t), 2000);
 }
 
 function openMoodModal(dateKey) {
@@ -584,10 +592,7 @@ function openMoodModal(dateKey) {
 }
 
 function openMoodManual() {
-  const yest = fmtDate(addDays(new Date(), -1));
-  const t = today();
-  const dateKey = yest >= DB.createdAt ? yest : t;
-  openMoodModal(dateKey);
+  openMoodModal(today());
 }
 
 function closeMoodModal() {
@@ -818,8 +823,7 @@ function jokersAvailable(habit) {
 }
 
 function isDayRequired(habit, dateObj) {
-  if (!habit.weekdayOnly) return true;
-  return !isWeekend(dateObj);
+  return isDayActive(habit, dateObj);
 }
 
 function calcStreak(habit) {
@@ -838,7 +842,7 @@ function calcStreak(habit) {
     for (let i = 0; i < 730; i++) {
       const k = fmtDate(d);
       if (k < createdAt) break;
-      if (habit.weekdayOnly && isWeekend(d)) { d = addDays(d, -1); continue; }
+      if (!isDayActive(habit, d)) { d = addDays(d, -1); continue; }
       if (logs[k] === 'fail') break;
       if (k <= todayKey) streak++;
       d = addDays(d, -1);
@@ -854,8 +858,8 @@ function calcStreak(habit) {
 
   const todayDone = logDone(todayKey);
   const todayObj = new Date();
-  const todayIsWeekend = habit.weekdayOnly && isWeekend(todayObj);
-  const todayEffectiveDone = todayDone || todayIsWeekend;
+  const todayInactive = !isDayActive(habit, todayObj);
+  const todayEffectiveDone = todayDone || todayInactive;
 
   let d = new Date();
   if (!todayEffectiveDone) d = addDays(d, -1);
@@ -864,7 +868,7 @@ function calcStreak(habit) {
   for (let i = 0; i < 730; i++) {
     const k = fmtDate(d);
     if (k < createdAt) break;
-    if (habit.weekdayOnly && isWeekend(d)) { d = addDays(d, -1); continue; }
+    if (!isDayActive(habit, d)) { d = addDays(d, -1); continue; }
     if (logDone(k)) { streak++; }
     else { break; }
     d = addDays(d, -1);
@@ -874,7 +878,7 @@ function calcStreak(habit) {
   let dd = new Date(parseDate(createdAt));
   while (fmtDate(dd) <= todayKey) {
     const k = fmtDate(dd);
-    if (habit.weekdayOnly && isWeekend(dd)) { dd = addDays(dd, 1); continue; }
+    if (!isDayActive(habit, dd)) { dd = addDays(dd, 1); continue; }
     if (logDone(k)) { run++; best = Math.max(best, run); }
     else run = 0;
     dd = addDays(dd, 1);
@@ -907,7 +911,7 @@ function toggleHabit(id) {
     }
     saveData();
     checkAchievements();
-    if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+    if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
     renderAll();
     flashCard(id);
     return;
@@ -936,7 +940,7 @@ function toggleHabit(id) {
   }
   saveData();
   checkAchievements();
-  if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+  if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
   renderAll();
   flashCard(id);
 }
@@ -960,7 +964,7 @@ function addDrink() {
   saveData();
   checkAchievements();
   if (next >= DRINK_GOAL && cur < DRINK_GOAL) {
-    if (countDoneToday() === HABITS.length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+    if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
     flashCard('drink');
   }
   renderAll();
@@ -984,6 +988,7 @@ function countDoneToday() {
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
   return HABITS.reduce((n, h) => {
+    if (h.optional) return n;
     if (h.type === 'drink') return n + (isDrinkDone(t) ? 1 : 0);
     if (h.type === 'weekly') {
       return n + (isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate)) ? 1 : 0);
@@ -1009,7 +1014,7 @@ function renderHeader() {
     `${DAY_FULL[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`;
 
   const done = countDoneToday();
-  const total = HABITS.length;
+  const total = HABITS.filter(h => !h.optional).length;
   const scoreEl = document.getElementById('scoreNum');
   scoreEl.textContent = `${done}/${total}`;
   scoreEl.style.color = done === total ? '#34d399' : done >= Math.ceil(total/2) ? '#fbbf24' : 'var(--text)';
@@ -1108,10 +1113,13 @@ function renderHabits() {
           <button class="pomo-stop-btn" onclick="event.stopPropagation(); stopPomodoro('${h.id}')" title="Arrêter">✕</button>
         </div></div>`
       : `<div class="pomo-wrap"><button class="pomo-btn" onclick="event.stopPropagation(); startPomodoro('${h.id}')" title="Démarrer un Pomodoro (25 min)">⏱️</button></div>`;
-    return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+      const schedBadge = h.activeDays ? '<span class="weekday-badge">Sun–Thu</span>'
+        : h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : '';
+      const optBadge = h.optional ? '<span class="weekday-badge" style="background:color-mix(in srgb,var(--hc) 15%,transparent);border-color:color-mix(in srgb,var(--hc) 35%,transparent);color:var(--hc)">Optional</span>' : '';
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
               data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
       <span class="h-emoji">${h.emoji}</span>
-      <div class="h-name">${h.name}${h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : ''}</div>
+      <div class="h-name">${h.name}${schedBadge}${optBadge}</div>
       <div class="h-card-footer">
         <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
         ${pomoHtml}
@@ -1166,7 +1174,7 @@ function renderStreaks() {
       ? (sublabelMap[h.id] || 'days clean')
       : h.type === 'drink'
         ? 'days hitting goal'
-        : h.weekdayOnly ? 'weekdays in a row' : 'day streak';
+        : (h.weekdayOnly || h.activeDays) ? 'scheduled days in a row' : 'day streak';
 
     return `<div class="streak-card" style="--hc:${h.color};${delay}">
       <div class="streak-top">
@@ -1275,8 +1283,8 @@ function renderHeatmap() {
           continue;
         }
 
-        if (habit.weekdayOnly && isWeekend(date)) {
-          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — weekend ✦`;
+        if (!isDayActive(habit, date)) {
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — rest day ✦`;
           weeksHtml += `<div class="hm-cell hm-cell-off"
             style="background:#111520;border:1px dashed #1e2740;opacity:0.5"
             onmouseenter="tipShow(event,'${tip}')"
@@ -1310,7 +1318,7 @@ function renderHeatmap() {
     const badgeStyle = `color:${habit.color};border-color:color-mix(in srgb,${habit.color} 35%,transparent);background:color-mix(in srgb,${habit.color} 10%,transparent)`;
     const streakLabel = habit.type === 'weekly' ? 'wk. streak'
       : habit.type === 'bad' ? 'd. clean'
-      : habit.weekdayOnly ? 'weekdays' : 'd. streak';
+      : (habit.weekdayOnly || habit.activeDays) ? 'sched. streak' : 'd. streak';
 
     return `
       <div class="heatmap-item">
@@ -1363,7 +1371,7 @@ function drawLineChart() {
       const d = addDays(todayDate, -i);
       const k = fmtDate(d);
       if (k > todayKey || k < DB.createdAt) { pts.push(null); continue; }
-      if (h.weekdayOnly && isWeekend(d)) { pts.push(1); continue; }
+      if (!isDayActive(h, d)) { pts.push(1); continue; }
       pts.push(getHabitDayValue(h, k, d));
     }
     return { habit: h, pts };
@@ -1461,7 +1469,7 @@ function drawDayChart() {
     const dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
 
     HABITS.forEach(h => {
-      if (h.weekdayOnly && isWeekend(d)) return;
+      if (!isDayActive(h, d)) return;
       const val = getHabitDayValue(h, k, d);
       stats[dow].done  += val;
       stats[dow].total += 1;
@@ -1557,7 +1565,7 @@ function drawHabitCharts() {
       const d = addDays(todayDate, -i);
       const k = fmtDate(d);
       if (k > todayKey || k < DB.createdAt) { pts.push(null); continue; }
-      if (habit.weekdayOnly && isWeekend(d)) { pts.push(null); continue; }
+      if (!isDayActive(habit, d)) { pts.push(null); continue; }
       const val = getHabitDayValue(habit, k, d);
       pts.push(val);
       if (val === 1) successCount++;
@@ -1657,7 +1665,7 @@ function drawRadarChart() {
       const d = addDays(todayDate, -i);
       const k = fmtDate(d);
       if (k < DB.createdAt) continue;
-      if (habit.weekdayOnly && isWeekend(d)) continue;
+      if (!isDayActive(habit, d)) continue;
       success += getHabitDayValue(habit, k, d);
       total++;
     }
