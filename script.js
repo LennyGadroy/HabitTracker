@@ -2,14 +2,14 @@ const HABITS = [
   { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',   color:'#818cf8', jokerLimit:3, activeDays:[0,1,2,3,4] },
   { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',   color:'#e879f9', jokerLimit:3, weekdayOnly:false },
   { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',   color:'#34d399', jokerLimit:3, weekdayOnly:true  },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'good',   color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
   { id:'work',     name:'Work',              emoji:'💼', type:'good',   color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
+  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
   { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
   { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
   { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
   { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
-  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
-  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
-  { id:'running',  name:'Running',           emoji:'🏃', type:'good',   color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
 ];
 
 const DRINK_GOAL = 2000;
