@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HabitsTracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0c0f18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Habits">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="application-name" content="HabitsTracker">
+  <meta name="description" content="Gamified habit tracker — streaks, XP, Pomodoro &amp; mood">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -101,8 +111,7 @@
     <div class="modal-section">
       <label class="modal-label">Display name</label>
       <div class="modal-row">
-        <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32"
-               onkeydown="if(event.key==='Enter') saveProfileName()">
+        <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32" onkeydown="if(event.key==='Enter') saveProfileName()">
         <button class="modal-save-btn" onclick="saveProfileName()">Save</button>
       </div>
       <div class="modal-hint">Shown in the greeting at the top of the page.</div>
@@ -186,5 +195,24 @@
 <div id="tooltip"></div>
 <canvas class="confetti-overlay" id="confettiCanvas"></canvas>
 <script src="script.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then((reg) => {
+        console.log('[HabitsTracker] SW registered:', reg.scope);
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[HabitsTracker] New version available — refresh to update.');
+            }
+          });
+        });
+      })
+      .catch((err) => console.warn('[HabitsTracker] SW registration failed:', err));
+  });
+}
+</script>
 </body>
 </html>
