@@ -23,7 +23,7 @@ const NOTIF_SCHEDULE = [
     id: 'sleep',
     title: '💤 Extinction des feux',
     body:  'Ton lit te réclame, ne le ghoste pas. Ferme tes yeux avant que ton XP ne fonde au soleil demain matin.',
-    hour: 22, minute: 0,
+    hour: 21, minute: 0,
     days: [1, 2, 3, 4, 5],
   },
   {
