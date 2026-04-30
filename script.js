@@ -905,10 +905,12 @@ async function toggleNotifications() {
     alert('Notifications were blocked.\n\nTo enable them, go to your browser / Android settings and allow notifications for this site.');
   }
 }
+function confirmReset() {
   if (confirm('⚠️ This will permanently delete ALL your habit data and cannot be undone.\n\nAre you sure?')) {
     localStorage.removeItem('ht_v2');
     location.reload();
   }
+}
 
 function jokersUsedThisMonth(habitId) {
   const monthKey = today().slice(0,7);
