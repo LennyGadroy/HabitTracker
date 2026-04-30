@@ -2,19 +2,19 @@ const HABITS = [
   { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',    color:'#818cf8', jokerLimit:3, weekdayOnly:true },
   { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',    color:'#e879f9', jokerLimit:3, weekdayOnly:false },
   { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',    color:'#34d399', jokerLimit:3, weekdayOnly:true  },
-  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
-  { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
   { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',   color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
-  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86efac', jokerLimit:0, weekdayOnly:false },
-  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
   { id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#a3e635', jokerLimit:0, weekdayOnly:false, step:1, goal:2, max:3 },
+  { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
+  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86efac', jokerLimit:0, weekdayOnly:false },
   { id:'shower',   name:'Shower',            emoji:'🚿', type:'shower',  color:'#67e8f9', jokerLimit:0, weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
   { id:'phoneoob', name:'Phone out of bed',  emoji:'📵', type:'good',    color:'#c084fc', jokerLimit:2, weekdayOnly:false },
   { id:'nosugar',  name:'No extra Sugar',    emoji:'🍬', type:'bad',     color:'#f9a8d4', jokerLimit:0, weekdayOnly:false },
-  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',     color:'#fb923c', jokerLimit:0, weekdayOnly:false, amounts:['No','15min','30min','1h','2h','3h'] },
-  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',     color:'#f87171', jokerLimit:0, weekdayOnly:false, amounts:['No','15min','30min','45min','1h','1h30','2h'] },
-  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',     color:'#f43f5e', jokerLimit:0, weekdayOnly:false, amounts:['No','1','2','3'] },
+  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',     color:'#fb923c', jokerLimit:0, weekdayOnly:false, amounts:['No','15','30','1h','2h','+3h'] },
+  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',     color:'#f87171', jokerLimit:0, weekdayOnly:false, amounts:['No','15','30','1h','+2h'] },
+  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',     color:'#f43f5e', jokerLimit:0, weekdayOnly:false, amounts:['No','1','2','+3'] },
 ];
 
 const DRINK_GOAL = 2000;
@@ -1321,7 +1321,7 @@ function renderHabits() {
           return `<button class="bad-amount-btn${sel ? ' selected' : ''}${isBad ? ' bad-amount-fail' : ' bad-amount-ok'}"
             onclick="event.stopPropagation();selectBadAmount('${h.id}','${val}')">${a}</button>`;
         }).join('');
-        const unitLabel = h.id === 'nofilms' ? 'film(s)' : '';
+        const unitLabel = h.id === 'nofilms' ? '': '';
         return `<div class="${cardCls}" style="--hc:${h.color};${delay}" data-habit="${h.id}">
           <span class="h-emoji">${h.emoji}</span>
           <div class="h-name">${h.name}${unitLabel ? `<span class="drink-amount">${unitLabel}</span>` : ''}</div>
