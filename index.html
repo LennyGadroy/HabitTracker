@@ -4,13 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HabitsTracker</title>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0c0f18">
   <meta name="mobile-web-app-capable" content="yes">
+
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Habits">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
   <meta name="application-name" content="HabitsTracker">
   <meta name="description" content="Gamified habit tracker — streaks, XP, Pomodoro &amp; mood">
 
@@ -111,7 +114,8 @@
     <div class="modal-section">
       <label class="modal-label">Display name</label>
       <div class="modal-row">
-        <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32" onkeydown="if(event.key==='Enter') saveProfileName()">
+        <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32"
+               onkeydown="if(event.key==='Enter') saveProfileName()">
         <button class="modal-save-btn" onclick="saveProfileName()">Save</button>
       </div>
       <div class="modal-hint">Shown in the greeting at the top of the page.</div>
@@ -148,6 +152,16 @@
           </div>
         </div>
         <button class="pref-toggle off" id="hardcoreToggle" onclick="togglePref('hardcore')">OFF</button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-icon">🔔</span>
+          <div>
+            <div class="pref-label-text">Habit notifications</div>
+            <div class="pref-hint">Reminders: Sleep 22h, Gym 5h50, Run 17h30, Work 8h30…</div>
+          </div>
+        </div>
+        <button class="pref-toggle off" id="notifsToggle" onclick="toggleNotifications()">OFF</button>
       </div>
     </div>
     <div class="modal-divider"></div>

@@ -1482,3 +1482,102 @@
 
   .score-orb .score-num { font-size: 1.5rem; }
 }
+.shower-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.shower-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border2);
+  background: var(--s2);
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.shower-btn:hover {
+  border-color: var(--border3);
+  background: var(--s3);
+  color: var(--text);
+}
+
+.shower-hot-btn.active {
+  background: #f9731620;
+  border-color: #f97316;
+  color: #f97316;
+  box-shadow: 0 0 8px #f9731630;
+}
+.shower-warm-btn.active {
+  background: #fbbf2420;
+  border-color: #fbbf24;
+  color: #fbbf24;
+  box-shadow: 0 0 8px #fbbf2430;
+}
+.shower-cold-btn.active {
+  background: #67e8f920;
+  border-color: #67e8f9;
+  color: #67e8f9;
+  box-shadow: 0 0 8px #67e8f930;
+}
+
+.shower-hot  { --hc: #f97316 !important; }
+.shower-warm { --hc: #fbbf24 !important; }
+.shower-cold { --hc: #67e8f9 !important; }
+
+.shower-state-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 0.68rem;
+  font-weight: 600;
+  vertical-align: middle;
+  letter-spacing: .02em;
+}
+
+.bad-amounts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.bad-amount-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--s2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
+  white-space: nowrap;
+}
+.bad-amount-btn:hover {
+  background: var(--s3);
+  color: var(--text);
+}
+.bad-amount-btn.bad-amount-ok.selected {
+  background: color-mix(in srgb, #34d399 18%, transparent);
+  border-color: #34d399;
+  color: #34d399;
+  box-shadow: 0 0 8px #34d39930;
+}
+.bad-amount-btn.bad-amount-fail.selected {
+  background: color-mix(in srgb, var(--bad) 18%, transparent);
+  border-color: var(--bad);
+  color: var(--bad);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 40%, transparent);
+}
+.bad-amount-btn:active { transform: scale(0.95); }

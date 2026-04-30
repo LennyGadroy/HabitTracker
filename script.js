@@ -1,20 +1,28 @@
 const HABITS = [
-  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',   color:'#818cf8', jokerLimit:3, activeDays:[0,1,2,3,4] },
-  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',   color:'#e879f9', jokerLimit:3, weekdayOnly:false },
-  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',   color:'#34d399', jokerLimit:3, weekdayOnly:true  },
-  { id:'running',  name:'Running',           emoji:'🏃', type:'good',   color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
-  { id:'work',     name:'Work',              emoji:'💼', type:'good',   color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
-  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',  color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good',   color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
-  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly', color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
-  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',    color:'#fb923c', jokerLimit:0, weekdayOnly:false },
-  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',    color:'#f87171', jokerLimit:0, weekdayOnly:false },
-  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',    color:'#f43f5e', jokerLimit:0, weekdayOnly:false },
+  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',    color:'#818cf8', jokerLimit:3, weekdayOnly:true },
+  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',    color:'#e879f9', jokerLimit:3, weekdayOnly:false },
+  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',    color:'#34d399', jokerLimit:3, weekdayOnly:true  },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
+  { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
+  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',   color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
+  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86efac', jokerLimit:0, weekdayOnly:false },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
+  { id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#a3e635', jokerLimit:0, weekdayOnly:false, step:1, goal:2, max:3 },
+  { id:'shower',   name:'Shower',            emoji:'🚿', type:'shower',  color:'#67e8f9', jokerLimit:0, weekdayOnly:false },
+  { id:'phoneoob', name:'Phone out of bed',  emoji:'📵', type:'good',    color:'#c084fc', jokerLimit:2, weekdayOnly:false },
+  { id:'nosugar',  name:'No extra Sugar',    emoji:'🍬', type:'bad',     color:'#f9a8d4', jokerLimit:0, weekdayOnly:false },
+  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',     color:'#fb923c', jokerLimit:0, weekdayOnly:false, amounts:['No','15min','30min','1h','2h','3h'] },
+  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',     color:'#f87171', jokerLimit:0, weekdayOnly:false, amounts:['No','15min','30min','45min','1h','1h30','2h'] },
+  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',     color:'#f43f5e', jokerLimit:0, weekdayOnly:false, amounts:['No','1','2','3'] },
 ];
 
 const DRINK_GOAL = 2000;
 const DRINK_STEP = 250;
 const DRINK_MAX  = 5000;
+
+const PORTION_GOAL = 5;
+const PORTION_MAX  = 10;
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
 const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
@@ -69,6 +77,34 @@ function getDrinkMl(dateKey) {
 }
 function isDrinkDone(dateKey) { return getDrinkMl(dateKey) >= DRINK_GOAL; }
 
+function getPortions(dateKey) {
+  const v = DB.habits['fruits'].logs[dateKey];
+  return typeof v === 'number' ? v : 0;
+}
+function isPortionDone(dateKey) { return getPortions(dateKey) >= PORTION_GOAL; }
+
+function getShowerState(dateKey) {
+  return DB.habits['shower'].logs[dateKey] || null;
+}
+
+function isShowerDone(dateKey) {
+  const s = getShowerState(dateKey);
+  return s === 'cold' || s === 'lukewarm';
+}
+
+function isBadFail(id, dateKey) {
+  const log = DB.habits[id].logs[dateKey];
+  return log === 'fail' || (!!log && log !== 'no');
+}
+
+function getCounterVal(id, dateKey) {
+  const v = DB.habits[id].logs[dateKey];
+  return typeof v === 'number' ? v : 0;
+}
+function isCounterDone(habit, dateKey) {
+  return getCounterVal(habit.id, dateKey) >= habit.goal;
+}
+
 function getWeekMonday(dateObj) {
   const d = new Date(dateObj);
   d.setHours(0, 0, 0, 0);
@@ -102,13 +138,19 @@ function calcWeeklyStreak(habit) {
 }
 
 function getHabitDayValue(habit, dateKey, dateObj) {
-  if (habit.type === 'drink') return isDrinkDone(dateKey) ? 1 : 0;
+  if (habit.type === 'drink')   return isDrinkDone(dateKey) ? 1 : 0;
+  if (habit.type === 'portion') return isPortionDone(dateKey) ? 1 : getPortions(dateKey) / PORTION_GOAL;
+  if (habit.type === 'counter') return isCounterDone(habit, dateKey) ? 1 : getCounterVal(habit.id, dateKey) / habit.goal;
+  if (habit.type === 'shower') {
+    const s = getShowerState(dateKey);
+    return s === 'cold' ? 1 : s === 'lukewarm' ? 0.5 : s === 'hot' ? 0 : 0;
+  }
   if (habit.type === 'weekly') {
     const weekMonday = getWeekMonday(dateObj || parseDate(dateKey));
     return isWeeklyDoneForWeek(habit.id, weekMonday) ? 1 : 0;
   }
   const log = DB.habits[habit.id].logs[dateKey];
-  if (habit.type === 'bad') return log === 'fail' ? 0 : 1;
+  if (habit.type === 'bad') return isBadFail(habit.id, dateKey) ? 0 : 1;
   return (log === 'done' || log === 'joker') ? 1 : 0;
 }
 
@@ -137,7 +179,8 @@ if (!DB.jokerReasons) DB.jokerReasons = {};
 if (!DB.moods) DB.moods = {};
 if (!DB.perfectDaysClaimed) DB.perfectDaysClaimed = [];
 if (!DB.penaltiesApplied) DB.penaltiesApplied = [];
-if (DB.profile.hardcoreMode === undefined) DB.profile.hardcoreMode = false;
+if (DB.profile.hardcoreMode   === undefined) DB.profile.hardcoreMode   = false;
+if (DB.profile.notifsEnabled  === undefined) DB.profile.notifsEnabled  = false;
 
 const audioCtx = (() => {
   try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
@@ -731,8 +774,9 @@ function applyZenMode() {
   HABITS.forEach(h => {
     let isDone = false;
     if (h.type === 'drink') isDone = isDrinkDone(t);
+    else if (h.type === 'counter') isDone = isCounterDone(h, t);
     else if (h.type === 'weekly') isDone = isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate));
-    else if (h.type === 'bad') isDone = DB.habits[h.id].logs[t] !== 'fail';
+    else if (h.type === 'bad') isDone = !isBadFail(h.id, t);
     else isDone = DB.habits[h.id].logs[t] === 'done' || DB.habits[h.id].logs[t] === 'joker';
     if (isDone) {
       const el = document.querySelector(`[data-habit="${h.id}"]`);
@@ -802,12 +846,69 @@ function togglePref(pref) {
   saveData();
 }
 
-function confirmReset() {
+function swMessage(type) {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+  navigator.serviceWorker.controller.postMessage({ type });
+}
+
+function initNotifications() {
+  const on = !!DB.profile.notifsEnabled;
+  const btn = document.getElementById('notifsToggle');
+  if (btn) {
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.className   = `pref-toggle ${on ? 'on' : 'off'}`;
+  }
+  if (on && Notification.permission === 'granted') {
+    swMessage('NOTIFS_RESCHEDULE');
+  }
+}
+
+async function toggleNotifications() {
+  const btn = document.getElementById('notifsToggle');
+
+  if (!('Notification' in window)) {
+    alert('Your browser does not support notifications.');
+    return;
+  }
+
+  if (DB.profile.notifsEnabled) {
+    DB.profile.notifsEnabled = false;
+    btn.textContent = 'OFF';
+    btn.className   = 'pref-toggle off';
+    swMessage('NOTIFS_DISABLE');
+    saveData();
+    return;
+  }
+
+  let permission = Notification.permission;
+  if (permission === 'default') {
+    permission = await Notification.requestPermission();
+  }
+
+  if (permission === 'granted') {
+    DB.profile.notifsEnabled = true;
+    btn.textContent = 'ON';
+    btn.className   = 'pref-toggle on';
+    swMessage('NOTIFS_ENABLE');
+    saveData();
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'NOTIFS_ENABLE' });
+    }
+    new Notification('🔔 HabitsTracker', {
+      body: 'Notifications activated! Your habit reminders are now scheduled.',
+      icon: './assets/icon-192.png',
+    });
+  } else {
+    btn.textContent = 'OFF';
+    btn.className   = 'pref-toggle off';
+    alert('Notifications were blocked.\n\nTo enable them, go to your browser / Android settings and allow notifications for this site.');
+  }
+}
   if (confirm('⚠️ This will permanently delete ALL your habit data and cannot be undone.\n\nAre you sure?')) {
     localStorage.removeItem('ht_v2');
     location.reload();
   }
-}
 
 function jokersUsedThisMonth(habitId) {
   const monthKey = today().slice(0,7);
@@ -843,7 +944,7 @@ function calcStreak(habit) {
       const k = fmtDate(d);
       if (k < createdAt) break;
       if (!isDayActive(habit, d)) { d = addDays(d, -1); continue; }
-      if (logs[k] === 'fail') break;
+      if (isBadFail(habit.id, k)) break;
       if (k <= todayKey) streak++;
       d = addDays(d, -1);
     }
@@ -851,7 +952,10 @@ function calcStreak(habit) {
   }
 
   const logDone = k => {
-    if (habit.type === 'drink') return isDrinkDone(k);
+    if (habit.type === 'drink')   return isDrinkDone(k);
+    if (habit.type === 'portion') return isPortionDone(k);
+    if (habit.type === 'counter') return isCounterDone(habit, k);
+    if (habit.type === 'shower')  return isShowerDone(k);
     const s = logs[k];
     return s === 'done' || s === 'joker';
   };
@@ -896,7 +1000,10 @@ function toggleHabit(id) {
   const habit = HABITS.find(h => h.id === id);
   const t = today();
 
-  if (habit.type === 'drink') { addDrink(); return; }
+  if (habit.type === 'drink')   { addDrink();           return; }
+  if (habit.type === 'portion') { addPortion();         return; }
+  if (habit.type === 'counter') { addCounter(id);       return; }
+  if (habit.type === 'shower')  { cycleShower();        return; }
 
   if (habit.type === 'weekly') {
     const cur = DB.habits[id].logs[t];
@@ -918,6 +1025,7 @@ function toggleHabit(id) {
   }
 
   if (habit.type === 'bad') {
+    if (habit.amounts) return;
     const cur = DB.habits[id].logs[t];
     if (cur === 'fail') {
       delete DB.habits[id].logs[t];
@@ -970,6 +1078,117 @@ function addDrink() {
   renderAll();
 }
 
+function addPortion() {
+  const t = today();
+  const cur = getPortions(t);
+  if (cur >= PORTION_MAX) {
+    delete DB.habits['fruits'].logs[t];
+    playSound('undo');
+  } else {
+    const next = cur + 1;
+    DB.habits['fruits'].logs[t] = next;
+    if (next >= PORTION_GOAL && cur < PORTION_GOAL) {
+      playSound('drink');
+      giveXP(12);
+    } else {
+      playSound('done');
+    }
+  }
+  saveData();
+  checkAchievements();
+  const cur2 = getPortions(t);
+  if (cur2 >= PORTION_GOAL) {
+    if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+    flashCard('fruits');
+  }
+  renderAll();
+}
+
+function addCounter(id) {
+  const habit = HABITS.find(h => h.id === id);
+  const t = today();
+  const cur = getCounterVal(id, t);
+  const next = cur >= habit.max ? 0 : cur + habit.step;
+  if (next === 0) {
+    delete DB.habits[id].logs[t];
+    playSound('undo');
+  } else {
+    DB.habits[id].logs[t] = next;
+    if (next >= habit.goal && cur < habit.goal) {
+      giveXP(10);
+      playSound('done');
+    } else if (next < habit.goal) {
+      playSound('done');
+    }
+  }
+  saveData();
+  checkAchievements();
+  if (next >= habit.goal && cur < habit.goal) {
+    if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+    flashCard(id);
+  }
+  renderAll();
+}
+
+function selectBadAmount(id, amount) {
+  const t = today();
+  const cur = DB.habits[id].logs[t];
+  if (cur === amount) {
+    delete DB.habits[id].logs[t];
+    playSound('undo');
+  } else {
+    DB.habits[id].logs[t] = amount;
+    if (amount === 'no') {
+      playSound('done');
+    } else {
+      playSound('fail');
+    }
+  }
+  saveData();
+  checkAchievements();
+  if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+  renderAll();
+  flashCard(id);
+}
+
+function setShower(state) {
+  const t = today();
+  const cur = getShowerState(t);
+  if (cur === state) {
+    delete DB.habits['shower'].logs[t];
+    playSound('undo');
+  } else {
+    DB.habits['shower'].logs[t] = state;
+    if (state === 'cold') {
+      giveXP(15); playSound('done');
+    } else if (state === 'lukewarm') {
+      giveXP(5); playSound('done');
+    } else {
+      playSound('fail');
+    }
+  }
+  saveData();
+  checkAchievements();
+  if (isShowerDone(t)) {
+    if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
+    flashCard('shower');
+  }
+  renderAll();
+}
+
+function cycleShower() {
+  const t = today();
+  const cur = getShowerState(t);
+  const next = cur === null ? 'cold' : cur === 'cold' ? 'lukewarm' : cur === 'lukewarm' ? 'hot' : null;
+  if (next === null) {
+    delete DB.habits['shower'].logs[t];
+    playSound('undo');
+  } else {
+    setShower(next); return;
+  }
+  saveData(); renderAll();
+}
+
 function useJoker(id) {
   const habit = HABITS.find(h => h.id === id);
   if (habit.type !== 'good') return;
@@ -989,12 +1208,15 @@ function countDoneToday() {
   todayDate.setHours(0,0,0,0);
   return HABITS.reduce((n, h) => {
     if (h.optional) return n;
-    if (h.type === 'drink') return n + (isDrinkDone(t) ? 1 : 0);
+    if (h.type === 'drink')   return n + (isDrinkDone(t) ? 1 : 0);
+    if (h.type === 'portion') return n + (isPortionDone(t) ? 1 : 0);
+    if (h.type === 'counter') return n + (isCounterDone(h, t) ? 1 : 0);
+    if (h.type === 'shower')  return n + (isShowerDone(t) ? 1 : 0);
     if (h.type === 'weekly') {
       return n + (isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate)) ? 1 : 0);
     }
     const s = DB.habits[h.id].logs[t];
-    if (h.type === 'bad') return n + (s !== 'fail' ? 1 : 0);
+    if (h.type === 'bad') return n + (!isBadFail(h.id, t) ? 1 : 0);
     return n + (s === 'done' || s === 'joker' ? 1 : 0);
   }, 0);
 }
@@ -1075,24 +1297,104 @@ function renderHabits() {
 
     if (h.type === 'bad') {
       const log = DB.habits[h.id].logs[t];
+      const fail = isBadFail(h.id, t);
       let cardCls, btnText;
-      if (log === 'fail') {
+      if (fail) {
         cardCls = 'habit-card bad-fail';
         const labels = {
           noscroll: '❌ Scrolled today',
           nofilms:  '❌ Watched a film',
           nogaming: '❌ Gamed today',
+          nosugar:  '❌ Had sugar today',
         };
         btnText = labels[h.id] || '❌ Failed today';
       } else {
         cardCls = 'habit-card bad-done';
         btnText = '✓ Clean today';
       }
+
+      if (h.amounts) {
+        const amountsHtml = h.amounts.map(a => {
+          const val = a === 'No' ? 'no' : a;
+          const sel = log === val;
+          const isBad = a !== 'No';
+          return `<button class="bad-amount-btn${sel ? ' selected' : ''}${isBad ? ' bad-amount-fail' : ' bad-amount-ok'}"
+            onclick="event.stopPropagation();selectBadAmount('${h.id}','${val}')">${a}</button>`;
+        }).join('');
+        const unitLabel = h.id === 'nofilms' ? 'film(s)' : '';
+        return `<div class="${cardCls}" style="--hc:${h.color};${delay}" data-habit="${h.id}">
+          <span class="h-emoji">${h.emoji}</span>
+          <div class="h-name">${h.name}${unitLabel ? `<span class="drink-amount">${unitLabel}</span>` : ''}</div>
+          <div class="bad-amounts-row">${amountsHtml}</div>
+        </div>`;
+      }
+
       return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
                 data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
         <span class="h-emoji">${h.emoji}</span>
         <div class="h-name">${h.name}</div>
         <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+      </div>`;
+    }
+
+    if (h.type === 'shower') {
+      const state = getShowerState(t);
+      const SHOWER_MAP = {
+        hot:      { label:'🥵 Hot',      color:'#f97316', cardCls:'shower-hot' },
+        lukewarm: { label:'😐 Warm',     color:'#fbbf24', cardCls:'shower-warm' },
+        cold:     { label:'🥶 Cold',     color:'#67e8f9', cardCls:'shower-cold' },
+      };
+      const cardExtra = state ? SHOWER_MAP[state].cardCls : '';
+      return `<div class="habit-card ${cardExtra}" style="--hc:${state ? SHOWER_MAP[state].color : h.color};${delay}"
+                data-habit="${h.id}">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}${state ? `<span class="shower-state-badge" style="background:${SHOWER_MAP[state].color}20;color:${SHOWER_MAP[state].color};border-color:${SHOWER_MAP[state].color}40">${SHOWER_MAP[state].label}</span>` : ''}</div>
+        <div class="shower-btns">
+          <button class="shower-btn shower-hot-btn${state==='hot'?' active':''}"
+            onclick="event.stopPropagation();setShower('hot')">🥵 Hot</button>
+          <button class="shower-btn shower-warm-btn${state==='lukewarm'?' active':''}"
+            onclick="event.stopPropagation();setShower('lukewarm')">😐 Warm</button>
+          <button class="shower-btn shower-cold-btn${state==='cold'?' active':''}"
+            onclick="event.stopPropagation();setShower('cold')">🥶 Cold</button>
+        </div>
+      </div>`;
+    }
+
+    if (h.type === 'counter') {
+      const qty  = getCounterVal(h.id, t);
+      const done = qty >= h.goal;
+      const pct  = Math.min(100, Math.round((qty / h.goal) * 100));
+      const cardCls = done ? 'habit-card done' : 'habit-card';
+      const btnText = qty >= h.max ? `✓ Max! Reset` : done ? `✓ Goal! +1 more (${qty}/${h.max})` : `+ 1`;
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+                data-habit="${h.id}" onclick="addCounter('${h.id}')">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}
+          <span class="drink-amount">${qty} / ${h.goal}</span>
+        </div>
+        <div class="drink-track">
+          <div class="drink-fill" style="width:${pct}%;background:${h.color}"></div>
+        </div>
+        <button class="h-btn" onclick="event.stopPropagation(); addCounter('${h.id}')">${btnText}</button>
+      </div>`;
+    }
+
+    if (h.type === 'portion') {
+      const qty  = getPortions(t);
+      const done = qty >= PORTION_GOAL;
+      const pct  = Math.min(100, Math.round((qty / PORTION_GOAL) * 100));
+      const cardCls = done ? 'habit-card done' : 'habit-card';
+      const btnText = qty >= PORTION_MAX ? `✓ Max! Reset` : done ? `✓ Goal! +1 more (${qty})` : `+ 1 portion`;
+      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+                data-habit="${h.id}" onclick="addPortion()">
+        <span class="h-emoji">${h.emoji}</span>
+        <div class="h-name">${h.name}
+          <span class="drink-amount">${qty} / ${PORTION_GOAL} portions</span>
+        </div>
+        <div class="drink-track">
+          <div class="drink-fill" style="width:${pct}%;background:${h.color}"></div>
+        </div>
+        <button class="h-btn" onclick="event.stopPropagation(); addPortion()">${btnText}</button>
       </div>`;
     }
 
@@ -1169,11 +1471,16 @@ function renderStreaks() {
       noscroll: 'days without scrolling',
       nofilms:  'days without films',
       nogaming: 'days without gaming',
+      nosugar:  'days without sugar',
     };
     const sublabel = h.type === 'bad'
       ? (sublabelMap[h.id] || 'days clean')
       : h.type === 'drink'
         ? 'days hitting goal'
+      : h.type === 'portion'
+        ? 'days at 5+ portions'
+      : h.type === 'shower'
+        ? 'cold/warm showers'
         : (h.weekdayOnly || h.activeDays) ? 'scheduled days in a row' : 'day streak';
 
     return `<div class="streak-card" style="--hc:${h.color};${delay}">
@@ -1283,6 +1590,53 @@ function renderHeatmap() {
           continue;
         }
 
+        if (habit.type === 'portion') {
+          const qty = typeof log === 'number' ? log : 0;
+          let bg, opacity = 1, statusLabel;
+          if (qty >= PORTION_GOAL) {
+            bg = habit.color; statusLabel = `✓ ${qty} portions`;
+          } else if (qty > 0) {
+            bg = habit.color + '55'; statusLabel = `⚠ ${qty} portions`;
+          } else {
+            bg = '#1e2740'; opacity = 0.6; statusLabel = '—';
+          }
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
+          weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
+            onmouseenter="tipShow(event,'${tip}')"
+            onmouseleave="tipHide()"></div>`;
+          continue;
+        }
+
+        if (habit.type === 'shower') {
+          const SHOWER_COLORS = { cold:'#67e8f9', lukewarm:'#fbbf24', hot:'#f97316' };
+          const SHOWER_LABELS = { cold:'🥶 Cold', lukewarm:'😐 Warm', hot:'🥵 Hot' };
+          const bg = log ? SHOWER_COLORS[log] : '#1e2740';
+          const opacity = log ? 1 : 0.6;
+          const statusLabel = log ? SHOWER_LABELS[log] : '—';
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
+          weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
+            onmouseenter="tipShow(event,'${tip}')"
+            onmouseleave="tipHide()"></div>`;
+          continue;
+        }
+
+        if (habit.type === 'counter') {
+          const qty = getCounterVal(habit.id, k);
+          let bg, opacity = 1, statusLabel;
+          if (qty >= habit.goal) {
+            bg = habit.color; statusLabel = `✓ ${qty}/${habit.goal}`;
+          } else if (qty > 0) {
+            bg = habit.color + '55'; statusLabel = `⚠ ${qty}/${habit.goal}`;
+          } else {
+            bg = '#1e2740'; opacity = 0.6; statusLabel = '—';
+          }
+          const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
+          weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
+            onmouseenter="tipShow(event,'${tip}')"
+            onmouseleave="tipHide()"></div>`;
+          continue;
+        }
+
         if (!isDayActive(habit, date)) {
           const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — rest day ✦`;
           weeksHtml += `<div class="hm-cell hm-cell-off"
@@ -1294,7 +1648,9 @@ function renderHeatmap() {
 
         let status;
         if (habit.type === 'bad') {
-          status = log === 'fail' ? 'fail' : 'done';
+          status = isBadFail(habit.id, k) ? 'fail' : 'done';
+        } else if (habit.type === 'counter') {
+          status = isCounterDone(habit, k) ? 'done' : (getCounterVal(habit.id, k) > 0 ? 'joker' : 'miss');
         } else {
           status = log === 'done' ? 'done' : log === 'joker' ? 'joker' : 'miss';
         }
@@ -1304,7 +1660,10 @@ function renderHeatmap() {
                  : status === 'fail'  ? '#f87171'
                  : '#1e2740';
         const opacity = status === 'miss' ? 0.6 : 1;
-        const statusLabel = status === 'done' ? '✓' : status === 'joker' ? '🃏' : status === 'fail' ? '✗' : '—';
+        const statusLabel = status === 'done'  ? '✓ clean'
+                          : status === 'joker' ? '🃏'
+                          : status === 'fail'  ? (habit.amounts ? `✗ ${DB.habits[habit.id].logs[k]}` : '✗')
+                          : '—';
         const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
 
         weeksHtml += `<div class="hm-cell" style="background:${bg};opacity:${opacity}"
@@ -1831,6 +2190,12 @@ renderAll();
 checkAchievements();
 checkDailyMood();
 checkDailyPenalties();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then(() => initNotifications());
+} else {
+  initNotifications();
+}
 
 setInterval(() => {
   const n = new Date();
