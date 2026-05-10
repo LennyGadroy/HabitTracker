@@ -1581,3 +1581,46 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 40%, transparent);
 }
 .bad-amount-btn:active { transform: scale(0.95); }
+
+.filter-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-pill {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: .72rem;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.filter-pill:hover {
+  background: var(--s3);
+  color: var(--text);
+  border-color: var(--border2);
+}
+.filter-pill.active {
+  background: color-mix(in srgb, #818cf8 18%, transparent);
+  border-color: #818cf8;
+  color: #818cf8;
+}
+
+.habits-charts-grid.single {
+  grid-template-columns: 1fr;
+}
+.habits-charts-grid.single canvas {
+  height: 200px !important;
+}

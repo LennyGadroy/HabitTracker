@@ -39,6 +39,9 @@ const JOKER_REASONS = [
 const MOOD_EMOJIS  = ['', '😫', '😕', '😐', '😊', '🤩'];
 const MOOD_COLORS  = ['', '#f87171', '#fb923c', '#fbbf24', '#86efac', '#34d399'];
 
+let heatmapFilter     = '';
+let habitChartFilter  = '';
+
 const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
 const isDayActive = (habit, dateObj) => {
   if (habit.activeDays) return habit.activeDays.includes(dateObj.getDay());
@@ -532,6 +535,87 @@ const ACHIEVEMENTS = [
     desc: 'Any single habit streak of 30+ days',
     check: () => HABITS.some(h => calcStreak(h).current >= 30)
   },
+  {
+    id: 'ice_king',
+    emoji: '🧊',
+    name: 'Ice King',
+    desc: '14 cold showers in a row',
+    check: () => {
+      let streak = 0;
+      let d = new Date();
+      for (let i = 0; i < 730; i++) {
+        const k = fmtDate(d);
+        if (k < DB.createdAt) break;
+        if (DB.habits['shower'].logs[k] === 'cold') streak++;
+        else break;
+        d = addDays(d, -1);
+      }
+      return streak >= 14;
+    }
+  },
+  {
+    id: 'night_tamed',
+    emoji: '🌙',
+    name: 'Night Owl Tamed',
+    desc: '14-day sleep streak',
+    check: () => { const h = HABITS.find(x => x.id === 'sleep'); return h && calcStreak(h).current >= 14; }
+  },
+  {
+    id: 'plant_power',
+    emoji: '🥗',
+    name: 'Plant Power',
+    desc: '14-day fruits & veggies streak',
+    check: () => { const h = HABITS.find(x => x.id === 'fruits'); return h && calcStreak(h).current >= 14; }
+  },
+  {
+    id: 'transcendent',
+    emoji: '🌌',
+    name: 'Transcendent',
+    desc: 'Reach the maximum level',
+    check: () => calcLevel(DB.xp) >= LEVEL_THRESHOLDS.length
+  },
+  {
+    id: 'xp_500',
+    emoji: '💎',
+    name: 'XP Hoarder',
+    desc: 'Accumulate 500 XP',
+    check: () => (DB.xp || 0) >= 500
+  },
+  {
+    id: 'dedicated',
+    emoji: '🎯',
+    name: 'Dedicated',
+    desc: 'Any single habit streak of 60+ days',
+    check: () => HABITS.some(h => calcStreak(h).current >= 60)
+  },
+  {
+    id: 'perfectionist',
+    emoji: '💯',
+    name: 'Perfectionist',
+    desc: '5 Perfect Days achieved',
+    check: () => (DB.perfectDaysClaimed || []).length >= 5
+  },
+  {
+    id: 'sugar_free',
+    emoji: '🚫',
+    name: 'Sugar Free',
+    desc: '30 days without extra sugar',
+    check: () => { const h = HABITS.find(x => x.id === 'nosugar'); return h && calcStreak(h).current >= 30; }
+  },
+  {
+    id: 'hydration_master',
+    emoji: '🌊',
+    name: 'Hydration Master',
+    desc: '30 days hitting the water goal',
+    check: () => { const h = HABITS.find(x => x.id === 'drink'); return h && calcStreak(h).current >= 30; }
+  },
+  {
+    id: 'phone_free',
+    emoji: '🧘',
+    name: 'Phone Free',
+    desc: '21-day phone-out-of-bed streak',
+    check: () => { const h = HABITS.find(x => x.id === 'phoneoob'); return h && calcStreak(h).current >= 21; }
+  },
 ];
 
 function checkAchievements() {
@@ -847,8 +931,11 @@ function togglePref(pref) {
 }
 
 function swMessage(type) {
-  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
-  navigator.serviceWorker.controller.postMessage({ type });
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(reg => {
+    const sw = reg.active;
+    if (sw) sw.postMessage({ type });
+  }).catch(() => {});
 }
 
 function initNotifications() {
@@ -889,15 +976,20 @@ async function toggleNotifications() {
     DB.profile.notifsEnabled = true;
     btn.textContent = 'ON';
     btn.className   = 'pref-toggle on';
-    swMessage('NOTIFS_ENABLE');
     saveData();
-
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'NOTIFS_ENABLE' });
-    }
-    new Notification('🔔 HabitsTracker', {
-      body: 'Notifications activated! Your habit reminders are now scheduled.',
-      icon: './assets/icon-192.png',
+    swMessage('NOTIFS_ENABLE');
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification('🔔 HabitsTracker', {
+        body: 'Notifications activated! Your habit reminders are now scheduled.',
+        icon: './assets/icon-192.png',
+      });
+    }).catch(() => {
+      try {
+        new Notification('🔔 HabitsTracker', {
+          body: 'Notifications activated!',
+          icon: './assets/icon-192.png',
+        });
+      } catch(e) {}
     });
   } else {
     btn.textContent = 'OFF';
@@ -1458,16 +1550,7 @@ function renderStreaks() {
       && yestLog !== 'done'
       && yestLog !== 'joker';
 
-    const jokersHtml = h.type === 'good' ? `
-      <div class="jokers-row">
-        ${Array(h.jokerLimit).fill(0).map((_,k) =>
-          `<div class="joker-pip ${k < s.jokersAvail ? 'available' : 'used'}">🃏</div>`
-        ).join('')}
-        <span style="font-size:.65rem;color:var(--muted);margin-left:2px">${s.jokersAvail}/${h.jokerLimit} this month</span>
-      </div>
-      <button class="joker-btn" onclick="useJoker('${h.id}')" ${canJoker ? '' : 'disabled'}>
-        ${canJoker ? '🃏 Joker for yesterday' : yest < DB.createdAt ? '—' : yestLog === 'done' || yestLog === 'joker' ? '✓ Yesterday OK' : '0 joker left'}
-      </button>` : '';
+    const jokersHtml = '';
 
     const sublabelMap = {
       noscroll: 'days without scrolling',
@@ -1498,6 +1581,29 @@ function renderStreaks() {
   }).join('');
 }
 
+function renderFilterBar(containerId, currentFilter, onSelect) {
+  const bar = document.getElementById(containerId);
+  if (!bar) return;
+  const pills = [{ id: '', emoji: '🗂️', name: 'All habits' }, ...HABITS.map(h => ({ id: h.id, emoji: h.emoji, name: h.name, color: h.color }))];
+  bar.innerHTML = `<div class="filter-bar">${pills.map(p => {
+    const active = currentFilter === p.id;
+    const style = active && p.color ? `background:color-mix(in srgb,${p.color} 18%,transparent);border-color:${p.color};color:${p.color}` : '';
+    return `<button class="filter-pill${active ? ' active' : ''}" style="${style}" onclick="${onSelect}('${p.id}')">${p.emoji} ${p.name}</button>`;
+  }).join('')}</div>`;
+}
+
+function setHeatmapFilter(id) {
+  heatmapFilter = id;
+  renderFilterBar('heatmapFilterBar', heatmapFilter, 'setHeatmapFilter');
+  renderHeatmap();
+}
+
+function setHabitChartFilter(id) {
+  habitChartFilter = id;
+  renderFilterBar('habitChartsFilterBar', habitChartFilter, 'setHabitChartFilter');
+  drawHabitCharts();
+}
+
 function renderHeatmap() {
   const WEEKS = 16;
   const todayKey = today();
@@ -1512,7 +1618,9 @@ function renderHeatmap() {
 
   const container = document.getElementById('heatmapContainer');
 
-  container.innerHTML = HABITS.map(habit => {
+  const habitsToShow = heatmapFilter ? HABITS.filter(h => h.id === heatmapFilter) : HABITS;
+
+  container.innerHTML = habitsToShow.map(habit => {
     const logs = DB.habits[habit.id].logs;
     const monthCells = [];
     for (let w = 0; w < WEEKS; w++) {
@@ -1726,23 +1834,27 @@ function drawLineChart() {
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
 
-  const habitSeries = HABITS.map(h => {
-    const pts = [];
-    for (let i = DAYS - 1; i >= 0; i--) {
-      const d = addDays(todayDate, -i);
-      const k = fmtDate(d);
-      if (k > todayKey || k < DB.createdAt) { pts.push(null); continue; }
-      if (!isDayActive(h, d)) { pts.push(1); continue; }
-      pts.push(getHabitDayValue(h, k, d));
-    }
-    return { habit: h, pts };
-  });
+  const globalPts = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = addDays(todayDate, -i);
+    const k = fmtDate(d);
+    if (k > todayKey || k < DB.createdAt) { globalPts.push(null); continue; }
+    let done = 0, total = 0;
+    HABITS.forEach(h => {
+      if (!isDayActive(h, d)) return;
+      done  += getHabitDayValue(h, k, d);
+      total += 1;
+    });
+    globalPts.push(total > 0 ? done / total : null);
+  }
 
   const smooth = pts => pts.map((v, i) => {
     if (v === null) return null;
     const win = [pts[i-1], v, pts[i+1]].filter(x => x !== null && x !== undefined);
     return win.reduce((a,b)=>a+b,0) / win.length;
   });
+
+  const smoothed = smooth(globalPts);
 
   const pad = { t:10, r:10, b:30, l:38 };
   const cW = W - pad.l - pad.r;
@@ -1767,47 +1879,57 @@ function drawLineChart() {
     ctx.fillText(`${d.getDate()}/${d.getMonth()+1}`, x, H - 5);
   }
 
-  habitSeries.forEach(({ habit, pts }) => {
-    const sp = smooth(pts);
-    const validPts = sp.map((v, i) => v === null ? null : {
-      x: pad.l + (i / (DAYS-1)) * cW,
-      y: pad.t + cH * (1 - v),
-    });
+  const validPts = smoothed.map((v, i) => v === null ? null : {
+    x: pad.l + (i / (DAYS-1)) * cW,
+    y: pad.t + cH * (1 - v),
+    v,
+  });
 
-    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
-    grad.addColorStop(0, habit.color + '25');
-    grad.addColorStop(1, habit.color + '00');
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
+  grad.addColorStop(0, 'rgba(129,140,248,0.3)');
+  grad.addColorStop(1, 'rgba(129,140,248,0.02)');
 
+  ctx.beginPath();
+  let started = false;
+  const bottom = pad.t + cH;
+  let lastX = pad.l;
+  validPts.forEach(p => {
+    if (!p) return;
+    if (!started) { ctx.moveTo(p.x, bottom); ctx.lineTo(p.x, p.y); started = true; }
+    else ctx.lineTo(p.x, p.y);
+    lastX = p.x;
+  });
+  if (started) { ctx.lineTo(lastX, bottom); ctx.closePath(); }
+  ctx.fillStyle = grad; ctx.fill();
+
+  ctx.beginPath();
+  started = false;
+  ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  validPts.forEach(p => {
+    if (!p) { started = false; return; }
+    if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.strokeStyle = '#818cf8';
+  ctx.stroke();
+
+  validPts.forEach(p => {
+    if (!p) return;
+    const col = p.v >= 0.75 ? '#34d399' : p.v >= 0.45 ? '#fbbf24' : '#f87171';
     ctx.beginPath();
-    let started = false;
-    const bottom = pad.t + cH;
-    let lastX = pad.l;
-    validPts.forEach(p => {
-      if (!p) return;
-      if (!started) { ctx.moveTo(p.x, bottom); ctx.lineTo(p.x, p.y); started = true; }
-      else ctx.lineTo(p.x, p.y);
-      lastX = p.x;
-    });
-    if (started) { ctx.lineTo(lastX, bottom); ctx.closePath(); }
-    ctx.fillStyle = grad; ctx.fill();
-
-    ctx.beginPath();
-    started = false;
-    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    validPts.forEach(p => {
-      if (!p) { started = false; return; }
-      if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-      else ctx.lineTo(p.x, p.y);
-    });
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.strokeStyle = '#07090f';
+    ctx.lineWidth = 1;
     ctx.stroke();
   });
 
-  document.getElementById('lineChartLegend').innerHTML = HABITS.map(h =>
-    `<div class="chart-legend-item">
-      <div class="chart-legend-dot" style="background:${h.color}"></div>
-      <span>${h.emoji} ${h.name}</span>
-    </div>`
-  ).join('');
+  document.getElementById('lineChartLegend').innerHTML = `
+    <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#34d399"></div><span>≥ 75% — Great day</span></div>
+    <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#fbbf24"></div><span>45–74% — OK</span></div>
+    <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#f87171"></div><span>< 45% — Tough day</span></div>
+  `;
 }
 
 function drawDayChart() {
@@ -1903,7 +2025,11 @@ function drawHabitCharts() {
   todayDate.setHours(0,0,0,0);
   const todayKey = today();
 
-  container.innerHTML = HABITS.map((h, idx) => `
+  const habitsToShow = habitChartFilter ? HABITS.filter(h => h.id === habitChartFilter) : HABITS;
+  const gridCls = habitsToShow.length === 1 ? 'habits-charts-grid single' : 'habits-charts-grid';
+
+  container.className = gridCls;
+  container.innerHTML = habitsToShow.map((h, idx) => `
     <div class="chart-card habit-mini-chart" style="animation-delay:${idx * .06}s">
       <div class="chart-title" style="color:${h.color}">${h.emoji} ${h.name}</div>
       <div class="habit-chart-meta" id="hcMeta_${h.id}"></div>
@@ -1911,7 +2037,7 @@ function drawHabitCharts() {
     </div>
   `).join('');
 
-  HABITS.forEach(habit => {
+  habitsToShow.forEach(habit => {
     const canvas = document.getElementById(`hc_${habit.id}`);
     if (!canvas) return;
     const W = canvas.parentElement.clientWidth - 36;
@@ -2181,7 +2307,9 @@ function renderAll() {
   renderStreaks();
   renderAchievements();
   renderMoodSection();
+  renderFilterBar('heatmapFilterBar', heatmapFilter, 'setHeatmapFilter');
   renderHeatmap();
+  renderFilterBar('habitChartsFilterBar', habitChartFilter, 'setHabitChartFilter');
   drawLineChart();
   drawDayChart();
   drawHabitCharts();
