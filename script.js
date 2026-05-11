@@ -819,6 +819,159 @@ function togglePref(pref) {
   saveData();
 }
 
+const NOTIF_SCHEDULE = [
+  {
+    id: 'clean-morning',
+    title: "🫧 T'as oublié ??",
+    body: "C'est le moment de prendre soin de ton corps !",
+    hour: 8, minute: 0,
+    days: [0, 1, 2, 3, 4, 5, 6],
+  },
+  {
+    id: 'work',
+    title: '💼 Work mode — 08:30',
+    body: "Mode Deep Focus activé. Téléphone loin, cerveau prêt. C'est l'heure de briller.",
+    hour: 8, minute: 30,
+    days: [1, 2, 3, 4, 5],
+  },
+  {
+    id: 'running',
+    title: '🏃 Fuis tes problèmes (littéralement) — 17:30',
+    body: "Enfile tes baskets avant que ton cerveau ne réalise ce qui se passe.",
+    hour: 17, minute: 30,
+    days: [1, 2, 3, 4, 5],
+  },
+  {
+    id: 'cleaning',
+    title: '🧹 Alerte décharge municipale — 18:00',
+    body: "C'est l'heure du reset hebdomadaire. Aspire tes péchés de la semaine.",
+    hour: 18, minute: 0,
+    days: [0],
+  },
+  {
+    id: 'clean-evening',
+    title: "🫧 T'as encore oublié ?? — 20:45",
+    body: "Même avant de dormir, il faut prendre soin de ton corps !",
+    hour: 20, minute: 45,
+    days: [0, 1, 2, 3, 4, 5, 6],
+  },
+  {
+    id: 'sleep',
+    title: '💤 Extinction des feux — 21:00',
+    body: "Ton lit te réclame. Ferme les écrans et prépare-toi à dormir.",
+    hour: 21, minute: 0,
+    days: [1, 2, 3, 4, 5],
+  },
+  {
+    id: 'phoneoob',
+    title: '📵 Lâche ton précieux ! — 21:00',
+    body: "Branche ton téléphone à l'autre bout de la pièce. Maintenant.",
+    hour: 21, minute: 0,
+    days: [0, 1, 2, 3, 4, 5, 6],
+  },
+];
+
+let _notifTimers = [];
+
+function getParisNow() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Paris',
+    weekday: 'short',
+    hour: '2-digit', minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = type => (parts.find(p => p.type === type) || {}).value || '0';
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let h = parseInt(get('hour'), 10);
+  if (h === 24) h = 0;
+  return {
+    weekday: DAYS.indexOf(get('weekday')),
+    hour: h,
+    minute: parseInt(get('minute'), 10),
+    ts: now.getTime(),
+  };
+}
+
+function msUntilNotif(hour, minute, days) {
+  const pc = getParisNow();
+  for (let offset = 0; offset <= 7; offset++) {
+    const checkDay = (pc.weekday + offset) % 7;
+    if (!days.includes(checkDay)) continue;
+    if (offset === 0) {
+      const nowMin = pc.hour * 60 + pc.minute;
+      const target = hour * 60 + minute;
+      if (nowMin >= target) continue;
+    }
+
+    const approx = pc.ts + offset * 86_400_000;
+    const approxDate = new Date(approx);
+    const candidate = new Date(approxDate);
+    candidate.setUTCHours(hour, minute, 0, 0);
+
+    const check = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(candidate);
+    const ch = parseInt((check.find(p => p.type === 'hour') || {}).value || '0', 10);
+    const cm = parseInt((check.find(p => p.type === 'minute') || {}).value || '0', 10);
+    const diff = (hour * 60 + minute) - (ch * 60 + cm);
+    const exact = new Date(candidate.getTime() + diff * 60_000 + offset * 86_400_000 - offset * 86_400_000);
+
+    const nowMin = pc.hour * 60 + pc.minute;
+    const targetMin = hour * 60 + minute;
+    const deltaMins = (offset * 24 * 60) + (targetMin - nowMin);
+    if (deltaMins > 0) return deltaMins * 60_000;
+  }
+  return null;
+}
+
+function scheduleLocalNotifications() {
+  _notifTimers.forEach(id => clearTimeout(id));
+  _notifTimers = [];
+
+  if (!DB.profile.notifsEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const MAX_AHEAD = 25 * 60 * 60 * 1000;
+
+  NOTIF_SCHEDULE.forEach(notif => {
+    const ms = msUntilNotif(notif.hour, notif.minute, notif.days);
+    if (ms === null || ms > MAX_AHEAD) return;
+
+    const h = String(notif.hour).padStart(2, '0');
+    const m = String(notif.minute).padStart(2, '0');
+    const inMin = Math.round(ms / 60_000);
+    console.log(`[HabitsTracker] "${notif.title}" dans ${inMin} min (${h}:${m})`);
+
+    const timerId = setTimeout(() => {
+      if (!DB.profile.notifsEnabled) return;
+      if (Notification.permission !== 'granted') return;
+      try {
+        new Notification(notif.title, {
+          body: notif.body,
+          icon: './assets/icon-192.png',
+          badge: './assets/icon-192.png',
+          tag: `habit-${notif.id}`,
+          renotify: false,
+          vibrate: [200, 100, 200],
+        });
+      } catch(e) {
+        navigator.serviceWorker?.ready.then(reg => {
+          reg.showNotification(notif.title, {
+            body: notif.body,
+            icon: './assets/icon-192.png',
+            tag: `habit-${notif.id}`,
+          });
+        }).catch(() => {});
+      }
+      setTimeout(() => scheduleLocalNotifications(), 2000);
+    }, ms);
+
+    _notifTimers.push(timerId);
+  });
+}
+
 function swMessage(type) {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.ready.then(reg => {
@@ -835,7 +988,7 @@ function initNotifications() {
     btn.className   = `pref-toggle ${on ? 'on' : 'off'}`;
   }
   if (on && Notification.permission === 'granted') {
-    swMessage('NOTIFS_RESCHEDULE');
+    scheduleLocalNotifications();
   }
 }
 
@@ -843,7 +996,7 @@ async function toggleNotifications() {
   const btn = document.getElementById('notifsToggle');
 
   if (!('Notification' in window)) {
-    alert('Your browser does not support notifications.');
+    alert('Votre navigateur ne supporte pas les notifications.');
     return;
   }
 
@@ -851,8 +1004,11 @@ async function toggleNotifications() {
     DB.profile.notifsEnabled = false;
     btn.textContent = 'OFF';
     btn.className   = 'pref-toggle off';
+    _notifTimers.forEach(id => clearTimeout(id));
+    _notifTimers = [];
     swMessage('NOTIFS_DISABLE');
     saveData();
+    showToast('🔕 Notifications désactivées.', 2500);
     return;
   }
 
@@ -866,26 +1022,22 @@ async function toggleNotifications() {
     btn.textContent = 'ON';
     btn.className   = 'pref-toggle on';
     saveData();
-    swMessage('NOTIFS_ENABLE');
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification('🔔 HabitsTracker', {
-        body: 'Notifications activated! Your habit reminders are now scheduled.',
+    scheduleLocalNotifications();
+    try {
+      new Notification('🔔 HabitsTracker', {
+        body: 'Rappels activés ! Tu seras notifié à chaque ouverture de l\'app.',
         icon: './assets/icon-192.png',
       });
-    }).catch(() => {
-      try {
-        new Notification('🔔 HabitsTracker', {
-          body: 'Notifications activated!',
-          icon: './assets/icon-192.png',
-        });
-      } catch(e) {}
-    });
+    } catch(e) {}
+    const count = NOTIF_SCHEDULE.length;
+    showToast(`✅ ${count} rappels planifiés pour aujourd'hui.`, 3000);
   } else {
     btn.textContent = 'OFF';
     btn.className   = 'pref-toggle off';
-    alert('Notifications were blocked.\n\nTo enable them, go to your browser / Android settings and allow notifications for this site.');
+    alert('Notifications bloquées.\n\nVa dans les paramètres du navigateur / Android et autorise les notifications pour ce site.');
   }
 }
+
 function confirmReset() {
   if (confirm('⚠️ This will permanently delete ALL your habit data and cannot be undone.\n\nAre you sure?')) {
     localStorage.removeItem('ht_v2');
