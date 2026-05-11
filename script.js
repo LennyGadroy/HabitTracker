@@ -1,20 +1,20 @@
 const HABITS = [
-  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',    color:'#818cf8', jokerLimit:3, weekdayOnly:true },
-  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',    color:'#e879f9', jokerLimit:3, weekdayOnly:false },
-  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',    color:'#34d399', jokerLimit:3, weekdayOnly:true  },
-  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',   color:'#38bdf8', jokerLimit:3, weekdayOnly:false },
-  { id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#a3e635', jokerLimit:0, weekdayOnly:false, step:1, goal:2, max:3 },
-  { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#fbbf24', jokerLimit:3, weekdayOnly:true  },
-  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#f97316', jokerLimit:2, weekdayOnly:false, optional:true },
-  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86efac', jokerLimit:0, weekdayOnly:false },
-  { id:'shower',   name:'Shower',            emoji:'🚿', type:'shower',  color:'#67e8f9', jokerLimit:0, weekdayOnly:false },
-  { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#a78bfa', jokerLimit:3, weekdayOnly:false, optional:true },
-  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ade80', jokerLimit:0, weekdayOnly:false, optional:true },
-  { id:'phoneoob', name:'Phone out of bed',  emoji:'📵', type:'good',    color:'#c084fc', jokerLimit:2, weekdayOnly:false },
-  { id:'nosugar',  name:'No extra Sugar',    emoji:'🍬', type:'bad',     color:'#f9a8d4', jokerLimit:0, weekdayOnly:false },
-  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',     color:'#fb923c', jokerLimit:0, weekdayOnly:false, amounts:['No','15','30','1h','2h','+3h'] },
-  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',     color:'#f87171', jokerLimit:0, weekdayOnly:false, amounts:['No','15','30','1h','+2h'] },
-  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',     color:'#f43f5e', jokerLimit:0, weekdayOnly:false, amounts:['No','1','2','+3'] },
+  { id:'sleep',    name:'Sleep',             emoji:'💤', type:'good',    color:'#818cf8', weekdayOnly:true },
+  { id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',    color:'#e879f9', weekdayOnly:false },
+  { id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',    color:'#34d399', weekdayOnly:true  },
+  { id:'drink',    name:'Drink',             emoji:'💧', type:'drink',   color:'#38bdf8', weekdayOnly:false },
+  { id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#a3e635', weekdayOnly:false, step:1, goal:2, max:3 },
+  { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#fbbf24', weekdayOnly:true  },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#f97316', weekdayOnly:false, optional:true },
+  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86efac', weekdayOnly:false },
+  { id:'shower',   name:'Shower',            emoji:'🚿', type:'shower',  color:'#67e8f9', weekdayOnly:false },
+  { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#a78bfa', weekdayOnly:false, optional:true },
+  { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ade80', weekdayOnly:false, optional:true },
+  { id:'phoneoob', name:'Phone out of bed',  emoji:'📵', type:'good',    color:'#c084fc', weekdayOnly:false },
+  { id:'nosugar',  name:'No extra Sugar',    emoji:'🍬', type:'bad',     color:'#f9a8d4', weekdayOnly:false },
+  { id:'nogaming', name:'No Gaming',         emoji:'🎮', type:'bad',     color:'#fb923c', weekdayOnly:false },
+  { id:'noscroll', name:'No Scroll',         emoji:'📱', type:'bad',     color:'#f87171', weekdayOnly:false },
+  { id:'nofilms',  name:'No Films',          emoji:'🎬', type:'bad',     color:'#f43f5e', weekdayOnly:false },
 ];
 
 const DRINK_GOAL = 2000;
@@ -27,20 +27,12 @@ const PORTION_MAX  = 10;
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2400, 3200, 4200];
 const LEVEL_NAMES = ['Novice','Apprentice','Practitioner','Devotee','Disciplined','Focused','Master','Grandmaster','Legend','Transcendent'];
 
-const JOKER_REASONS = [
-  { id: 'sick',    label: '🤒 Sick' },
-  { id: 'work',    label: '💼 Too much work' },
-  { id: 'social',  label: '🎉 Nightout' },
-  { id: 'tired',   label: '😴 Tired' },
-  { id: 'travel',  label: '✈️ Travel' },
-  { id: 'other',   label: '❓ Other' },
-];
 
 const MOOD_EMOJIS  = ['', '😫', '😕', '😐', '😊', '🤩'];
 const MOOD_COLORS  = ['', '#f87171', '#fb923c', '#fbbf24', '#86efac', '#34d399'];
 
-let heatmapFilter     = '';
-let habitChartFilter  = '';
+let heatmapFilter     = 'sleep';
+let habitChartFilter  = 'sleep';
 
 const isWeekend = d => { const dow = d.getDay(); return dow === 0 || dow === 6; };
 const isDayActive = (habit, dateObj) => {
@@ -96,8 +88,7 @@ function isShowerDone(dateKey) {
 }
 
 function isBadFail(id, dateKey) {
-  const log = DB.habits[id].logs[dateKey];
-  return log === 'fail' || (!!log && log !== 'no');
+  return DB.habits[id].logs[dateKey] === 'fail';
 }
 
 function getCounterVal(id, dateKey) {
@@ -154,7 +145,7 @@ function getHabitDayValue(habit, dateKey, dateObj) {
   }
   const log = DB.habits[habit.id].logs[dateKey];
   if (habit.type === 'bad') return isBadFail(habit.id, dateKey) ? 0 : 1;
-  return (log === 'done' || log === 'joker') ? 1 : 0;
+  return log === 'done' ? 1 : 0;
 }
 
 function loadData() {
@@ -178,12 +169,14 @@ if (!DB.profile) DB.profile = { name: '' };
 if (DB.profile.soundEnabled === undefined) DB.profile.soundEnabled = true;
 if (!DB.xp) DB.xp = 0;
 if (!DB.unlockedAchievements) DB.unlockedAchievements = [];
-if (!DB.jokerReasons) DB.jokerReasons = {};
 if (!DB.moods) DB.moods = {};
 if (!DB.perfectDaysClaimed) DB.perfectDaysClaimed = [];
 if (!DB.penaltiesApplied) DB.penaltiesApplied = [];
 if (DB.profile.hardcoreMode   === undefined) DB.profile.hardcoreMode   = false;
 if (DB.profile.notifsEnabled  === undefined) DB.profile.notifsEnabled  = false;
+if (DB.profile.darkMode       === undefined) DB.profile.darkMode       = true;
+
+initTheme();
 
 const audioCtx = (() => {
   try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
@@ -349,7 +342,7 @@ function checkDailyPenalties() {
     if (h.type !== 'good') return;
     if (!isDayActive(h, yestDate)) return;
     const log = DB.habits[h.id].logs[yest];
-    if (log !== 'done' && log !== 'joker') missed++;
+    if (log !== 'done') missed++;
   });
   if (missed > 0) {
     const penalty = missed * 5;
@@ -362,70 +355,6 @@ function checkDailyPenalties() {
   }
 }
 
-const POMO_DURATION = 25 * 60;
-let pomodoroTimers = {};
-
-function startPomodoro(id) {
-  if (pomodoroTimers[id]) return;
-  const habit = HABITS.find(h => h.id === id);
-  if (!habit || habit.type !== 'good') return;
-  pomodoroTimers[id] = { remaining: POMO_DURATION };
-  updatePomoDisplay(id);
-  pomodoroTimers[id].intervalId = setInterval(() => {
-    pomodoroTimers[id].remaining--;
-    updatePomoDisplay(id);
-    if (pomodoroTimers[id].remaining <= 0) {
-      clearInterval(pomodoroTimers[id].intervalId);
-      delete pomodoroTimers[id];
-      updatePomoDisplay(id);
-      playSound('fanfare');
-      showToast(`⏱️ Pomodoro terminé — ${habit.emoji} ${habit.name} validé !`, 4000);
-      const t = today();
-      if (DB.habits[id].logs[t] !== 'done') {
-        DB.habits[id].logs[t] = 'done';
-        giveXP(10);
-        saveData();
-        checkAchievements();
-        if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
-        renderAll();
-      }
-    }
-  }, 1000);
-  updatePomoDisplay(id);
-}
-
-function stopPomodoro(id) {
-  if (!pomodoroTimers[id]) return;
-  clearInterval(pomodoroTimers[id].intervalId);
-  delete pomodoroTimers[id];
-  updatePomoDisplay(id);
-}
-
-function updatePomoDisplay(id) {
-  const card = document.querySelector(`[data-habit="${id}"]`);
-  if (!card) return;
-  const state = pomodoroTimers[id];
-  const wrap = card.querySelector('.pomo-wrap');
-  if (!wrap) return;
-  if (!state) {
-    wrap.innerHTML = `<button class="pomo-btn" onclick="event.stopPropagation(); startPomodoro('${id}')" title="Démarrer un Pomodoro (25 min)">⏱️</button>`;
-    return;
-  }
-  const m = Math.floor(state.remaining / 60);
-  const s = String(state.remaining % 60).padStart(2, '0');
-  const pct = Math.round((1 - state.remaining / POMO_DURATION) * 100);
-  wrap.innerHTML = `
-    <div class="pomo-running">
-      <svg class="pomo-ring" viewBox="0 0 36 36">
-        <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--s4)" stroke-width="3"/>
-        <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--hc,#818cf8)" stroke-width="3"
-          stroke-dasharray="${pct} 100" stroke-linecap="round"
-          transform="rotate(-90 18 18)" pathLength="100"/>
-      </svg>
-      <span class="pomo-time">${m}:${s}</span>
-      <button class="pomo-stop-btn" onclick="event.stopPropagation(); stopPomodoro('${id}')" title="Arrêter">✕</button>
-    </div>`;
-}
 
 function checkPerfectWeek() {
   const todayDate = new Date();
@@ -646,54 +575,8 @@ function checkPerfectDayBonus() {
   }
 }
 
-let pendingJokerId = null;
-let selectedJokerReason = null;
 
-function openJokerModal(id) {
-  pendingJokerId = id;
-  selectedJokerReason = null;
-  const list = document.getElementById('jokerReasonsList');
-  list.innerHTML = JOKER_REASONS.map(r =>
-    `<button class="joker-reason-btn" data-reason="${r.id}" onclick="selectJokerReason('${r.id}')">${r.label}</button>`
-  ).join('');
-  document.getElementById('jokerConfirmBtn').disabled = true;
-  document.getElementById('jokerModal').classList.add('open');
-}
 
-function selectJokerReason(reasonId) {
-  selectedJokerReason = reasonId;
-  document.querySelectorAll('.joker-reason-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.reason === reasonId);
-  });
-  document.getElementById('jokerConfirmBtn').disabled = false;
-}
-
-function closeJokerModal() {
-  pendingJokerId = null;
-  selectedJokerReason = null;
-  document.getElementById('jokerModal').classList.remove('open');
-}
-
-function confirmJoker() {
-  if (!pendingJokerId || !selectedJokerReason) return;
-  const id = pendingJokerId;
-  const reason = selectedJokerReason;
-  closeJokerModal();
-
-  const habit = HABITS.find(h => h.id === id);
-  if (!habit || habit.type !== 'good') return;
-  if (jokersAvailable(habit) <= 0) return;
-
-  const yest = fmtDate(addDays(new Date(), -1));
-  if (yest < DB.createdAt) return;
-  const yestLog = DB.habits[id].logs[yest];
-  if (yestLog !== 'done' && yestLog !== 'joker') {
-    DB.habits[id].logs[yest] = 'joker';
-    DB.jokerReasons[`${yest}_${id}`] = reason;
-    saveData();
-    renderAll();
-  }
-}
 
 let currentMoodDate = null;
 
@@ -861,7 +744,7 @@ function applyZenMode() {
     else if (h.type === 'counter') isDone = isCounterDone(h, t);
     else if (h.type === 'weekly') isDone = isWeeklyDoneForWeek(h.id, getWeekMonday(todayDate));
     else if (h.type === 'bad') isDone = !isBadFail(h.id, t);
-    else isDone = DB.habits[h.id].logs[t] === 'done' || DB.habits[h.id].logs[t] === 'joker';
+    else isDone = DB.habits[h.id].logs[t] === 'done';
     if (isDone) {
       const el = document.querySelector(`[data-habit="${h.id}"]`);
       if (el) requestAnimationFrame(() => el.classList.add('zen-collapse'));
@@ -874,9 +757,11 @@ function openProfile() {
   const soundOn = DB.profile.soundEnabled !== false;
   const zenOn = !!DB.profile.zenMode;
   const hardcoreOn = !!DB.profile.hardcoreMode;
+  const darkOn = DB.profile.darkMode !== false;
   const sToggle = document.getElementById('soundToggle');
   const zToggle = document.getElementById('zenToggle');
   const hToggle = document.getElementById('hardcoreToggle');
+  const tToggle = document.getElementById('themeToggle');
   sToggle.textContent = soundOn ? 'ON' : 'OFF';
   sToggle.className = `pref-toggle ${soundOn ? 'on' : 'off'}`;
   zToggle.textContent = zenOn ? 'ON' : 'OFF';
@@ -884,6 +769,10 @@ function openProfile() {
   if (hToggle) {
     hToggle.textContent = hardcoreOn ? 'ON' : 'OFF';
     hToggle.className = `pref-toggle ${hardcoreOn ? 'on' : 'off'}`;
+  }
+  if (tToggle) {
+    tToggle.textContent = darkOn ? 'ON' : 'OFF';
+    tToggle.className = `pref-toggle ${darkOn ? 'on' : 'off'}`;
   }
   document.getElementById('profileModal').classList.add('open');
   setTimeout(() => document.getElementById('pseudoInput').focus(), 80);
@@ -1004,18 +893,24 @@ function confirmReset() {
   }
 }
 
-function jokersUsedThisMonth(habitId) {
-  const monthKey = today().slice(0,7);
-  const logs = DB.habits[habitId].logs;
-  return Object.entries(logs)
-    .filter(([date, s]) => date.startsWith(monthKey) && s === 'joker')
-    .length;
+function initTheme() {
+  const dark = DB.profile.darkMode !== false;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.textContent = dark ? 'ON' : 'OFF';
+    btn.className = `pref-toggle ${dark ? 'on' : 'off'}`;
+  }
 }
 
-function jokersAvailable(habit) {
-  if (habit.type !== 'good') return 0;
-  return Math.max(0, habit.jokerLimit - jokersUsedThisMonth(habit.id));
+function toggleTheme() {
+  DB.profile.darkMode = DB.profile.darkMode === false ? true : false;
+  saveData();
+  initTheme();
 }
+
+
+
 
 function isDayRequired(habit, dateObj) {
   return isDayActive(habit, dateObj);
@@ -1024,7 +919,7 @@ function isDayRequired(habit, dateObj) {
 function calcStreak(habit) {
   if (habit.type === 'weekly') {
     const streak = calcWeeklyStreak(habit);
-    return { current: streak, longest: streak, jokersAvail: 0, jokersUsed: 0 };
+    return { current: streak, longest: streak };
   }
 
   const logs = DB.habits[habit.id].logs;
@@ -1042,7 +937,7 @@ function calcStreak(habit) {
       if (k <= todayKey) streak++;
       d = addDays(d, -1);
     }
-    return { current: streak, longest: streak, jokersAvail: 0, jokersUsed: 0 };
+    return { current: streak, longest: streak };
   }
 
   const logDone = k => {
@@ -1050,8 +945,7 @@ function calcStreak(habit) {
     if (habit.type === 'portion') return isPortionDone(k);
     if (habit.type === 'counter') return isCounterDone(habit, k);
     if (habit.type === 'shower')  return isShowerDone(k);
-    const s = logs[k];
-    return s === 'done' || s === 'joker';
+    return logs[k] === 'done';
   };
 
   const todayDone = logDone(todayKey);
@@ -1082,12 +976,7 @@ function calcStreak(habit) {
     dd = addDays(dd, 1);
   }
 
-  return {
-    current: streak,
-    longest: Math.max(streak, best),
-    jokersAvail: jokersAvailable(habit),
-    jokersUsed: jokersUsedThisMonth(habit.id),
-  };
+  return { current: streak, longest: Math.max(streak, best) };
 }
 
 function toggleHabit(id) {
@@ -1119,7 +1008,6 @@ function toggleHabit(id) {
   }
 
   if (habit.type === 'bad') {
-    if (habit.amounts) return;
     const cur = DB.habits[id].logs[t];
     if (cur === 'fail') {
       delete DB.habits[id].logs[t];
@@ -1224,26 +1112,8 @@ function addCounter(id) {
   renderAll();
 }
 
-function selectBadAmount(id, amount) {
-  const t = today();
-  const cur = DB.habits[id].logs[t];
-  if (cur === amount) {
-    delete DB.habits[id].logs[t];
-    playSound('undo');
-  } else {
-    DB.habits[id].logs[t] = amount;
-    if (amount === 'no') {
-      playSound('done');
-    } else {
-      playSound('fail');
-    }
-  }
-  saveData();
-  checkAchievements();
-  if (countDoneToday() === HABITS.filter(h => !h.optional).length) { launchConfetti(); playSound('fanfare'); checkPerfectDayBonus(); }
-  renderAll();
-  flashCard(id);
-}
+
+
 
 function setShower(state) {
   const t = today();
@@ -1283,18 +1153,8 @@ function cycleShower() {
   saveData(); renderAll();
 }
 
-function useJoker(id) {
-  const habit = HABITS.find(h => h.id === id);
-  if (habit.type !== 'good') return;
-  if (jokersAvailable(habit) <= 0) return;
 
-  const yest = fmtDate(addDays(new Date(), -1));
-  if (yest < DB.createdAt) return;
-  const yestLog = DB.habits[id].logs[yest];
-  if (yestLog !== 'done' && yestLog !== 'joker') {
-    openJokerModal(id);
-  }
-}
+
 
 function countDoneToday() {
   const t = today();
@@ -1311,7 +1171,7 @@ function countDoneToday() {
     }
     const s = DB.habits[h.id].logs[t];
     if (h.type === 'bad') return n + (!isBadFail(h.id, t) ? 1 : 0);
-    return n + (s === 'done' || s === 'joker' ? 1 : 0);
+    return n + (s === 'done' ? 1 : 0);
   }, 0);
 }
 
@@ -1407,22 +1267,6 @@ function renderHabits() {
         btnText = '✓ Clean today';
       }
 
-      if (h.amounts) {
-        const amountsHtml = h.amounts.map(a => {
-          const val = a === 'No' ? 'no' : a;
-          const sel = log === val;
-          const isBad = a !== 'No';
-          return `<button class="bad-amount-btn${sel ? ' selected' : ''}${isBad ? ' bad-amount-fail' : ' bad-amount-ok'}"
-            onclick="event.stopPropagation();selectBadAmount('${h.id}','${val}')">${a}</button>`;
-        }).join('');
-        const unitLabel = h.id === 'nofilms' ? '': '';
-        return `<div class="${cardCls}" style="--hc:${h.color};${delay}" data-habit="${h.id}">
-          <span class="h-emoji">${h.emoji}</span>
-          <div class="h-name">${h.name}${unitLabel ? `<span class="drink-amount">${unitLabel}</span>` : ''}</div>
-          <div class="bad-amounts-row">${amountsHtml}</div>
-        </div>`;
-      }
-
       return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
                 data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
         <span class="h-emoji">${h.emoji}</span>
@@ -1493,34 +1337,18 @@ function renderHabits() {
     }
 
     const log = DB.habits[h.id].logs[t];
-    const done = log === 'done' || log === 'joker';
+    const done = log === 'done';
     const cardCls = done ? 'habit-card done' : 'habit-card';
     const btnText = done ? '✓ Completed!' : 'Mark as done';
-    const pomoRunning = !!pomodoroTimers[h.id];
-    const pomoHtml = pomoRunning
-      ? `<div class="pomo-wrap"><div class="pomo-running">
-          <svg class="pomo-ring" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--s4)" stroke-width="3"/>
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="${h.color}" stroke-width="3"
-              stroke-dasharray="${Math.round((1-(pomodoroTimers[h.id].remaining/POMO_DURATION))*100)} 100"
-              stroke-linecap="round" transform="rotate(-90 18 18)" pathLength="100"/>
-          </svg>
-          <span class="pomo-time">${Math.floor(pomodoroTimers[h.id].remaining/60)}:${String(pomodoroTimers[h.id].remaining%60).padStart(2,'0')}</span>
-          <button class="pomo-stop-btn" onclick="event.stopPropagation(); stopPomodoro('${h.id}')" title="Arrêter">✕</button>
-        </div></div>`
-      : `<div class="pomo-wrap"><button class="pomo-btn" onclick="event.stopPropagation(); startPomodoro('${h.id}')" title="Démarrer un Pomodoro (25 min)">⏱️</button></div>`;
-      const schedBadge = h.activeDays ? '<span class="weekday-badge">Sun–Thu</span>'
-        : h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : '';
-      const optBadge = h.optional ? '<span class="weekday-badge" style="background:color-mix(in srgb,var(--hc) 15%,transparent);border-color:color-mix(in srgb,var(--hc) 35%,transparent);color:var(--hc)">Optional</span>' : '';
-      return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
-              data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
-      <span class="h-emoji">${h.emoji}</span>
-      <div class="h-name">${h.name}${schedBadge}${optBadge}</div>
-      <div class="h-card-footer">
-        <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
-        ${pomoHtml}
-      </div>
-    </div>`;
+    const schedBadge = h.activeDays ? '<span class="weekday-badge">Sun–Thu</span>'
+      : h.weekdayOnly ? '<span class="weekday-badge">Mon–Fri</span>' : '';
+    const optBadge = h.optional ? '<span class="weekday-badge" style="background:color-mix(in srgb,var(--hc) 15%,transparent);border-color:color-mix(in srgb,var(--hc) 35%,transparent);color:var(--hc)">Optional</span>' : '';
+    return `<div class="${cardCls}" style="--hc:${h.color};${delay}"
+            data-habit="${h.id}" onclick="toggleHabit('${h.id}')">
+    <span class="h-emoji">${h.emoji}</span>
+    <div class="h-name">${h.name}${schedBadge}${optBadge}</div>
+    <button class="h-btn" onclick="event.stopPropagation(); toggleHabit('${h.id}')">${btnText}</button>
+  </div>`;
   }).join('');
 }
 
@@ -1542,15 +1370,6 @@ function renderStreaks() {
         <div class="streak-best">Best: ${s.longest} weeks</div>
       </div>`;
     }
-
-    const yestLog = DB.habits[h.id].logs[yest];
-    const canJoker = h.type === 'good'
-      && s.jokersAvail > 0
-      && yest >= DB.createdAt
-      && yestLog !== 'done'
-      && yestLog !== 'joker';
-
-    const jokersHtml = '';
 
     const sublabelMap = {
       noscroll: 'days without scrolling',
@@ -1576,7 +1395,6 @@ function renderStreaks() {
       <div class="streak-num">${s.current}</div>
       <div class="streak-sublabel">${sublabel}</div>
       <div class="streak-best">Best: ${s.longest} days</div>
-      ${jokersHtml}
     </div>`;
   }).join('');
 }
@@ -1584,7 +1402,7 @@ function renderStreaks() {
 function renderFilterBar(containerId, currentFilter, onSelect) {
   const bar = document.getElementById(containerId);
   if (!bar) return;
-  const pills = [{ id: '', emoji: '🗂️', name: 'All habits' }, ...HABITS.map(h => ({ id: h.id, emoji: h.emoji, name: h.name, color: h.color }))];
+  const pills = HABITS.map(h => ({ id: h.id, emoji: h.emoji, name: h.name, color: h.color }));
   bar.innerHTML = `<div class="filter-bar">${pills.map(p => {
     const active = currentFilter === p.id;
     const style = active && p.color ? `background:color-mix(in srgb,${p.color} 18%,transparent);border-color:${p.color};color:${p.color}` : '';
@@ -1650,7 +1468,7 @@ function renderHeatmap() {
         const isPre = k < DB.createdAt;
 
         if (isFuture || isPre) {
-          const border = isFuture ? '1px solid #1e2740' : 'none';
+          const border = isFuture ? `1px solid ${themeColors().grid}` : 'none';
           const tooltipTxt = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}${isFuture ? ' (upcoming)' : ''}`;
           weeksHtml += `<div class="hm-cell" style="background:transparent;border:${border}" data-tip="${tooltipTxt}"></div>`;
           continue;
@@ -1760,19 +1578,19 @@ function renderHeatmap() {
         if (habit.type === 'bad') {
           status = isBadFail(habit.id, k) ? 'fail' : 'done';
         } else if (habit.type === 'counter') {
-          status = isCounterDone(habit, k) ? 'done' : (getCounterVal(habit.id, k) > 0 ? 'joker' : 'miss');
+          status = isCounterDone(habit, k) ? 'done' : (getCounterVal(habit.id, k) > 0 ? 'partial' : 'miss');
         } else {
-          status = log === 'done' ? 'done' : log === 'joker' ? 'joker' : 'miss';
+          status = log === 'done' ? 'done' : 'miss';
         }
 
-        const bg = status === 'done'  ? habit.color
-                 : status === 'joker' ? '#fb923c'
-                 : status === 'fail'  ? '#f87171'
+        const bg = status === 'done'    ? habit.color
+                 : status === 'partial' ? habit.color + '66'
+                 : status === 'fail'    ? '#f87171'
                  : '#1e2740';
         const opacity = status === 'miss' ? 0.6 : 1;
-        const statusLabel = status === 'done'  ? '✓ clean'
-                          : status === 'joker' ? '🃏'
-                          : status === 'fail'  ? (habit.amounts ? `✗ ${DB.habits[habit.id].logs[k]}` : '✗')
+        const statusLabel = status === 'done'    ? '✓ done'
+                          : status === 'partial' ? '⚠ partial'
+                          : status === 'fail'    ? '✗ failed'
                           : '—';
         const tip = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()} — ${statusLabel}`;
 
@@ -1860,13 +1678,14 @@ function drawLineChart() {
   const cW = W - pad.l - pad.r;
   const cH = H - pad.t - pad.b;
 
+  const tc = themeColors();
   ctx.clearRect(0, 0, W, H);
 
-  ctx.strokeStyle = '#1e2740'; ctx.lineWidth = 1;
+  ctx.strokeStyle = tc.grid; ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = pad.t + cH * (1 - i/4);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#2c3b5a';
+    ctx.fillStyle = tc.label;
     ctx.font = '9px DM Mono, monospace'; ctx.textAlign = 'right';
     ctx.fillText(`${i*25}%`, pad.l - 5, y + 3);
   }
@@ -1874,7 +1693,7 @@ function drawLineChart() {
   for (let i = 0; i < DAYS; i += 5) {
     const d = addDays(todayDate, -(DAYS-1-i));
     const x = pad.l + (i / (DAYS-1)) * cW;
-    ctx.fillStyle = '#2c3b5a';
+    ctx.fillStyle = tc.label;
     ctx.font = '9px DM Mono, monospace'; ctx.textAlign = 'center';
     ctx.fillText(`${d.getDate()}/${d.getMonth()+1}`, x, H - 5);
   }
@@ -1965,11 +1784,12 @@ function drawDayChart() {
 
   ctx.clearRect(0, 0, W, H);
 
-  ctx.strokeStyle = '#1e2740'; ctx.lineWidth = 1;
+  const tc2 = themeColors();
+  ctx.strokeStyle = tc2.grid; ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = pad.t + cH * (1 - i/4);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#2c3b5a';
+    ctx.fillStyle = tc2.label;
     ctx.font = '9px DM Mono, monospace'; ctx.textAlign = 'right';
     ctx.fillText(`${i*25}%`, pad.l - 5, y + 3);
   }
@@ -1983,7 +1803,7 @@ function drawDayChart() {
     const bH = cH * rate;
     const x = pad.l + i * barSpacing + (barSpacing - barW) / 2;
     const y = pad.t + cH - bH;
-    const color = rate >= 0.75 ? '#34d399' : rate >= 0.45 ? '#fbbf24' : stat.total === 0 ? '#1e2740' : '#f87171';
+    const color = rate >= 0.75 ? '#34d399' : rate >= 0.45 ? '#fbbf24' : stat.total === 0 ? tc2.grid : '#f87171';
 
     if (bH > 0) {
       const r = Math.min(4, bH / 2);
@@ -1999,17 +1819,17 @@ function drawDayChart() {
       ctx.fill();
 
       if (bH > 14 && stat.total > 0) {
-        ctx.fillStyle = '#07090f';
+        ctx.fillStyle = tc2.dot;
         ctx.font = 'bold 8px DM Mono, monospace';
         ctx.textAlign = 'center';
         ctx.fillText(Math.round(rate*100)+'%', x + barW/2, y + 10);
       }
     } else {
-      ctx.fillStyle = '#1e2740';
+      ctx.fillStyle = tc2.grid;
       ctx.fillRect(x, pad.t + cH - 2, barW, 2);
     }
 
-    ctx.fillStyle = '#2c3b5a';
+    ctx.fillStyle = tc2.label;
     ctx.font = '9px DM Sans, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(labels[i], x + barW/2, H - 7);
@@ -2161,6 +1981,7 @@ function drawRadarChart() {
 
   ctx.clearRect(0, 0, size, size);
 
+  const tcr = themeColors();
   const levels = [0.25, 0.5, 0.75, 1.0];
   levels.forEach((lvl, li) => {
     ctx.beginPath();
@@ -2172,16 +1993,16 @@ function drawRadarChart() {
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.closePath();
-    ctx.strokeStyle = li === 3 ? '#28375a' : '#1e2740';
+    ctx.strokeStyle = li === 3 ? tcr.border2 || '#28375a' : tcr.grid;
     ctx.lineWidth = li === 3 ? 1.5 : 1;
     ctx.stroke();
-    ctx.fillStyle = li % 2 === 0 ? 'rgba(22,28,44,0.3)' : 'transparent';
+    ctx.fillStyle = li % 2 === 0 ? (DB.profile.darkMode !== false ? 'rgba(22,28,44,0.3)' : 'rgba(200,207,232,0.3)') : 'transparent';
     ctx.fill();
 
     const labelAngle = -Math.PI / 2;
     const lx = cx + Math.cos(labelAngle) * (maxR * lvl);
     const ly = cy + Math.sin(labelAngle) * (maxR * lvl);
-    ctx.fillStyle = '#2c3b5a';
+    ctx.fillStyle = tcr.label;
     ctx.font = '8px DM Mono, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`${Math.round(lvl * 100)}%`, lx, ly - 3);
@@ -2192,7 +2013,7 @@ function drawRadarChart() {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
-    ctx.strokeStyle = '#1e2740';
+    ctx.strokeStyle = tcr.grid;
     ctx.lineWidth = 1;
     ctx.stroke();
   });
@@ -2226,7 +2047,7 @@ function drawRadarChart() {
     ctx.arc(x, y, 4, 0, Math.PI * 2);
     ctx.fillStyle = habit.color;
     ctx.fill();
-    ctx.strokeStyle = '#07090f';
+    ctx.strokeStyle = tcr.dot;
     ctx.lineWidth = 1.5;
     ctx.stroke();
   });
@@ -2244,7 +2065,7 @@ function drawRadarChart() {
     ctx.fillText(habit.emoji, x, y - 7);
 
     ctx.font = '9px DM Sans, sans-serif';
-    ctx.fillStyle = '#56698f';
+    ctx.fillStyle = tcr.muted || '#56698f';
     ctx.fillText(habit.name, x, y + 7);
 
     const pct = Math.round(rates[i] * 100);
@@ -2298,6 +2119,20 @@ function launchConfetti() {
     else { ctx.clearRect(0,0,canvas.width,canvas.height); confettiRunning = false; }
   };
   requestAnimationFrame(tick);
+}
+
+function themeColors() {
+  const dark = DB.profile.darkMode !== false;
+  return {
+    bg:      dark ? '#07090f' : '#f0f2f8',
+    s1:      dark ? '#0c0f18' : '#e6e9f4',
+    s2:      dark ? '#111520' : '#ffffff',
+    s4:      dark ? '#1e2740' : '#d8dcee',
+    grid:    dark ? '#1e2740' : '#d0d5ea',
+    label:   dark ? '#2c3b5a' : '#9aa3c8',
+    dot:     dark ? '#07090f' : '#ffffff',
+    cellOff: dark ? '#1e2740' : '#d8dcee',
+  };
 }
 
 function renderAll() {

@@ -28,6 +28,29 @@
       --radius-sm: 9px;
     }
 
+    [data-theme="light"] {
+      --bg:      #f0f2f8;
+      --s1:      #e6e9f4;
+      --s2:      #ffffff;
+      --s3:      #eef0f9;
+      --s4:      #d8dcee;
+      --border:  #c8cfe8;
+      --border2: #b0bbdc;
+      --text:    #1a1f36;
+      --muted:   #6b7aab;
+      --dim:     #9aa3c8;
+    }
+
+    [data-theme="light"] body {
+      background-image:
+        radial-gradient(ellipse 80% 60% at 10% -10%, rgba(129,140,248,.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 110%, rgba(52,211,153,.06) 0%, transparent 60%);
+    }
+
+    [data-theme="light"] .hm-cell[style*="background:#1e2740"] {
+      opacity: 0.4 !important;
+    }
+
     body {
       background: var(--bg);
       color: var(--text);

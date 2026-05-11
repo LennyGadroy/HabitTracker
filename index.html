@@ -71,7 +71,6 @@
     <div id="heatmapContainer"></div>
     <div class="hm-legend">
       <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#34d399"></div>Completed</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#fb923c"></div>Joker 🃏</div>
       <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#f87171"></div>Missed / Slipped</div>
       <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#1e2740; border:1px solid #2c3b5a"></div>Not logged</div>
     </div>
@@ -126,6 +125,16 @@
       <label class="modal-label">Preferences</label>
       <div class="pref-row">
         <div class="pref-info">
+          <span class="pref-icon">🌙</span>
+          <div>
+            <div class="pref-label-text">Dark mode</div>
+            <div class="pref-hint">Switch between dark and light theme</div>
+          </div>
+        </div>
+        <button class="pref-toggle on" id="themeToggle" onclick="toggleTheme()">ON</button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
           <span class="pref-icon">🔊</span>
           <div>
             <div class="pref-label-text">Sound effects</div>
@@ -171,20 +180,6 @@
       <div class="modal-hint" style="margin-bottom:10px">Permanently erases all logs, streaks and settings. This cannot be undone.</div>
       <button class="modal-reset-btn" onclick="confirmReset()">🗑 Reset all data</button>
     </div>
-  </div>
-</div>
-<div id="jokerModal" class="modal-overlay" style="display:none">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-title">🃏 Use a Joker</div>
-      <button class="modal-x" onclick="closeJokerModal()">✕</button>
-    </div>
-    <div class="modal-section">
-      <label class="modal-label">What held you back yesterday?</label>
-      <div class="joker-reasons-grid" id="jokerReasonsList"></div>
-    </div>
-    <div class="modal-divider"></div>
-    <button class="joker-confirm-btn" id="jokerConfirmBtn" onclick="confirmJoker()" disabled>Use Joker for Yesterday</button>
   </div>
 </div>
 <div id="moodModal" class="modal-overlay">
