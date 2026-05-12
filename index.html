@@ -1,116 +1,216 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>HabitsTracker</title>
 
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0c0f18">
+  <meta name="theme-color" content="#7C6FF7">
   <meta name="mobile-web-app-capable" content="yes">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Habits">
+
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-
-  <meta name="application-name" content="HabitsTracker">
-  <meta name="description" content="Gamified habit tracker — streaks, XP, Pomodoro &amp; mood">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app">
-  <header>
-    <div class="header-left">
-      <div class="greeting" id="greeting">Good evening 🌙</div>
-      <div class="subdate" id="subdate">—</div>
-    </div>
-    <div class="header-right">
-      <div class="xp-display" id="xpDisplay">
-        <div class="xp-top-row">
-          <span class="xp-level-badge" id="xpLevel">Lv.1</span>
-          <span class="xp-total" id="xpTotal">0 XP</span>
-        </div>
-        <div class="xp-bar-wrap">
-          <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
-        </div>
-        <div class="xp-next" id="xpNext">100 to next level</div>
+  <div class="page" id="page-home">
+    <div class="page-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="var(--accent-bg)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
+        </svg>
       </div>
-      <div class="score-orb">
-        <div class="score-num" id="scoreNum">0/10</div>
-        <div class="score-lbl">goals today</div>
+      <div class="page-title">Home</div>
+      <button class="header-action-btn" onclick="openProfile()" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+          <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+          <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+    <div class="tabs-row">
+      <button class="tab-btn active" id="tab-btn-today" onclick="switchHomeTab('today')">Today</button>
+      <button class="tab-btn" id="tab-btn-weekly" onclick="switchHomeTab('weekly')">Weekly</button>
+      <button class="tab-btn" id="tab-btn-overall" onclick="switchHomeTab('overall')">Overall</button>
+    </div>
+    <div class="tab-panel" id="tab-today">
+      <div class="habits-list" id="todayHabits"></div>
+    </div>
+    <div class="tab-panel hidden" id="tab-weekly">
+      <div class="habits-list" id="weeklyHabits"></div>
+    </div>
+    <div class="tab-panel hidden" id="tab-overall">
+      <div class="habits-list" id="overallHabits"></div>
+    </div>
+    <button class="fab" onclick="openAddHabit()" aria-label="Add habit">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="page hidden" id="page-moodstat">
+    <div class="page-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="var(--accent-bg)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
+        </svg>
       </div>
-      <button class="profile-btn" onclick="openProfile()" title="Profile">👤</button>
+      <div class="page-title">Mood Stat</div>
+      <button class="header-action-btn" onclick="openMoodManual()" aria-label="Log mood">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z"/>
+          <path d="M10 6v4l3 3"/>
+        </svg>
+      </button>
     </div>
-  </header>
-  <section>
-    <div class="sec-label">Today</div>
-    <div class="habits-grid" id="habitsGrid"></div>
-  </section>
-  <section>
-    <div class="sec-label">Streaks &amp; Jokers</div>
-    <div class="streaks-grid" id="streaksGrid"></div>
-  </section>
-  <section>
-    <div class="sec-label">Achievements</div>
-    <div class="achievements-grid" id="achievementsGrid"></div>
-  </section>
-  <section id="moodSection">
-    <div class="sec-label sec-label-row">Mood &amp; Correlations
-      <button class="sec-action-btn" onclick="openMoodManual()" title="Saisir l'humeur manuellement">+ Log mood</button>
-    </div>
-    <div id="moodContent"><div class="mood-empty">No mood data yet — you'll be asked each morning!</div></div>
-  </section>
-  <section>
-    <div class="sec-label">History — 16 weeks</div>
-    <div id="heatmapFilterBar"></div>
-    <div id="heatmapContainer"></div>
-    <div class="hm-legend">
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#34d399"></div>Completed</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#f87171"></div>Missed / Slipped</div>
-      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#1e2740; border:1px solid #2c3b5a"></div>Not logged</div>
-    </div>
-  </section>
-  <section>
-    <div class="sec-label">Per-Habit Performance — 30 days</div>
-    <div id="habitChartsFilterBar"></div>
-    <div class="habits-charts-grid" id="habitChartsGrid"></div>
-  </section>
-  <section>
-    <div class="sec-label">Overview — Web Chart</div>
-    <div class="radar-wrap">
-      <div class="chart-card radar-card">
-        <div class="chart-title">All Habits — 30-day success rate</div>
-        <div class="radar-canvas-wrap">
-          <canvas id="radarChart"></canvas>
-        </div>
+    <div id="moodStatContent"></div>
+  </div>
+  <div class="page hidden" id="page-report">
+    <div class="page-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="var(--accent-bg)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
+        </svg>
       </div>
+      <div class="page-title">Report</div>
+      <button class="header-action-btn" aria-label="Options">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+          <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+          <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
-  </section>
-  <section>
-    <div class="sec-label">Monthly Trends</div>
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Global success rate — 30 days</div>
-        <canvas id="lineChart"></canvas>
-        <div class="chart-legend" id="lineChartLegend"></div>
+    <div id="reportContent"></div>
+  </div>
+  <div class="page hidden" id="page-myhabits">
+    <div class="page-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="var(--accent-bg)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
+        </svg>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Success by day of week</div>
-        <canvas id="dayChart"></canvas>
-      </div>
+      <div class="page-title">My Habits</div>
+      <button class="header-action-btn" onclick="openAddHabit()" aria-label="Add">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="10" y1="3" x2="10" y2="17"/><line x1="3" y1="10" x2="17" y2="10"/>
+        </svg>
+      </button>
     </div>
-  </section>
+    <div id="myHabitsContent"></div>
+  </div>
+  <div class="page hidden" id="page-account">
+    <div class="page-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="var(--accent-bg)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
+        </svg>
+      </div>
+      <div class="page-title">Account</div>
+      <div style="width:36px"></div>
+    </div>
+    <div id="accountContent"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')" aria-label="Home">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" id="nav-moodstat" onclick="showPage('moodstat')" aria-label="Mood Stat">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+        <line x1="9" y1="9.5" x2="9.01" y2="9.5"/>
+        <line x1="15" y1="9.5" x2="15.01" y2="9.5"/>
+      </svg>
+      <span class="nav-label">Mood Stat</span>
+    </button>
+    <button class="nav-btn" id="nav-report" onclick="showPage('report')" aria-label="Report">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <span class="nav-label">Report</span>
+    </button>
+    <button class="nav-btn" id="nav-myhabits" onclick="showPage('myhabits')" aria-label="My Habits">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <span class="nav-label">My Habits</span>
+    </button>
+    <button class="nav-btn" id="nav-account" onclick="showPage('account')" aria-label="Account">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+      <span class="nav-label">Account</span>
+    </button>
+  </nav>
+</div>
+<div id="moodModal" class="modal-overlay" onclick="closeMoodModal()">
+  <div class="mood-sheet" onclick="event.stopPropagation()">
+    <div class="mood-sheet-handle"></div>
+    <div id="moodStep1">
+      <div class="mood-sheet-title">How is your mood today?</div>
+      <div class="mood-sheet-divider"></div>
+      <div class="mood-emoji-grid" id="moodEmojiGrid">
+        <button class="mood-emoji-card" data-value="5" onclick="selectMoodCard(5)">
+          <span class="mood-card-emoji">😎</span>
+          <span class="mood-card-label">Great</span>
+        </button>
+        <button class="mood-emoji-card" data-value="4" onclick="selectMoodCard(4)">
+          <span class="mood-card-emoji">😊</span>
+          <span class="mood-card-label">Good</span>
+        </button>
+        <button class="mood-emoji-card" data-value="3" onclick="selectMoodCard(3)">
+          <span class="mood-card-emoji">😐</span>
+          <span class="mood-card-label">Okay</span>
+        </button>
+        <button class="mood-emoji-card" data-value="2" onclick="selectMoodCard(2)">
+          <span class="mood-card-emoji">😢</span>
+          <span class="mood-card-label">Not Good</span>
+        </button>
+        <button class="mood-emoji-card" data-value="1" onclick="selectMoodCard(1)">
+          <span class="mood-card-emoji">😡</span>
+          <span class="mood-card-label">Bad</span>
+        </button>
+      </div>
+      <button class="mood-confirm-btn" id="moodConfirmBtn" disabled onclick="goToMoodStep2()">I Feel Great!</button>
+    </div>
+    <div id="moodStep2" class="hidden">
+      <div class="mood-sheet-title" id="moodStep2Title">Great! How would you describe your feelings?</div>
+      <div class="mood-sheet-divider"></div>
+      <div class="feelings-grid" id="feelingsGrid"></div>
+      <button class="mood-confirm-btn" id="feelingsConfirmBtn" onclick="saveMoodWithFeelings()">I Feel Great!</button>
+    </div>
+  </div>
 </div>
 <div id="profileModal" class="modal-overlay" onclick="closeProfile()">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👤 Profile</div>
-      <button class="modal-x" onclick="closeProfile()">✕</button>
+      <div class="modal-title">Profile</div>
+      <button class="modal-x" onclick="closeProfile()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="2" y1="2" x2="16" y2="16"/><line x1="16" y1="2" x2="2" y2="16"/>
+        </svg>
+      </button>
     </div>
     <div class="modal-section">
       <label class="modal-label">Display name</label>
@@ -118,7 +218,6 @@
         <input type="text" id="pseudoInput" class="pseudo-input" placeholder="Enter your name…" maxlength="32" onkeydown="if(event.key==='Enter') saveProfileName()">
         <button class="modal-save-btn" onclick="saveProfileName()">Save</button>
       </div>
-      <div class="modal-hint">Shown in the greeting at the top of the page.</div>
     </div>
     <div class="modal-divider"></div>
     <div class="modal-section">
@@ -131,7 +230,7 @@
             <div class="pref-hint">Switch between dark and light theme</div>
           </div>
         </div>
-        <button class="pref-toggle on" id="themeToggle" onclick="toggleTheme()">ON</button>
+        <button class="pref-toggle off" id="themeToggle" onclick="toggleTheme()">OFF</button>
       </div>
       <div class="pref-row">
         <div class="pref-info">
@@ -148,7 +247,7 @@
           <span class="pref-icon">🧘</span>
           <div>
             <div class="pref-label-text">Zen mode</div>
-            <div class="pref-hint">Completed habits collapse — clear the board</div>
+            <div class="pref-hint">Completed habits collapse automatically</div>
           </div>
         </div>
         <button class="pref-toggle off" id="zenToggle" onclick="togglePref('zen')">OFF</button>
@@ -158,7 +257,7 @@
           <span class="pref-icon">💀</span>
           <div>
             <div class="pref-label-text">Hardcore mode</div>
-            <div class="pref-hint">-5 XP par habitude ratée le lendemain</div>
+            <div class="pref-hint">-5 XP per missed habit</div>
           </div>
         </div>
         <button class="pref-toggle off" id="hardcoreToggle" onclick="togglePref('hardcore')">OFF</button>
@@ -167,8 +266,8 @@
         <div class="pref-info">
           <span class="pref-icon">🔔</span>
           <div>
-            <div class="pref-label-text">Habit notifications</div>
-            <div class="pref-hint">Reminders: Sleep 22h, Gym 5h50, Run 17h30, Work 8h30…</div>
+            <div class="pref-label-text">Notifications</div>
+            <div class="pref-hint">Daily habit reminders</div>
           </div>
         </div>
         <button class="pref-toggle off" id="notifsToggle" onclick="toggleNotifications()">OFF</button>
@@ -176,51 +275,28 @@
     </div>
     <div class="modal-divider"></div>
     <div class="modal-section">
-      <div class="modal-label modal-danger-lbl">⚠ Danger zone</div>
-      <div class="modal-hint" style="margin-bottom:10px">Permanently erases all logs, streaks and settings. This cannot be undone.</div>
+      <label class="modal-label" style="color:var(--danger)">⚠ Danger zone</label>
+      <div class="pref-hint" style="margin-bottom:12px">Permanently erases all logs, streaks and settings.</div>
       <button class="modal-reset-btn" onclick="confirmReset()">🗑 Reset all data</button>
     </div>
   </div>
 </div>
-<div id="moodModal" class="modal-overlay">
-  <div class="mood-card" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-title">How was today? 🌙</div>
-      <button class="modal-x" onclick="closeMoodModal()">✕</button>
-    </div>
-    <div class="mood-date-label" id="moodDateLabel"></div>
-    <div class="mood-emoji-row">
-      <button class="mood-emoji-btn" data-value="1" onclick="selectMood(1)">😫</button>
-      <button class="mood-emoji-btn" data-value="2" onclick="selectMood(2)">😕</button>
-      <button class="mood-emoji-btn" data-value="3" onclick="selectMood(3)">😐</button>
-      <button class="mood-emoji-btn" data-value="4" onclick="selectMood(4)">😊</button>
-      <button class="mood-emoji-btn" data-value="5" onclick="selectMood(5)">🤩</button>
-    </div>
-    <div class="mood-labels-row">
-      <span>Rough</span><span></span><span>Neutral</span><span></span><span>Amazing</span>
-    </div>
-    <button class="mood-skip-btn" onclick="closeMoodModal()">Skip for now</button>
-  </div>
-</div>
-<div id="tooltip"></div>
+<div id="toast" class="toast"></div>
 <canvas class="confetti-overlay" id="confettiCanvas"></canvas>
 <script src="script.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then((reg) => {
-        console.log('[HabitsTracker] SW registered:', reg.scope);
+      .then(reg => {
         reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[HabitsTracker] New version available — refresh to update.');
-            }
+          const w = reg.installing;
+          w.addEventListener('statechange', () => {
+            if (w.state === 'installed' && navigator.serviceWorker.controller)
+              console.log('[HabitsTracker] Update available');
           });
         });
-      })
-      .catch((err) => console.warn('[HabitsTracker] SW registration failed:', err));
+      }).catch(e => console.warn('[HabitsTracker] SW failed:', e));
   });
 }
 </script>
