@@ -5,8 +5,8 @@ const HABITS = [
   { id:'drink',    name:'Drink Water',       emoji:'💧', type:'drink',   color:'#38BDF8', freq:'Everyday',        weekdayOnly:false },
   { id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#A3E635', freq:'Everyday',        weekdayOnly:false, step:1, goal:2, max:3 },
   { id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#FBBF24', freq:'5 days per week', weekdayOnly:true  },
-  { id:'running',  name:'Running',           emoji:'🏃', type:'good',    color:'#F97316', freq:'Everyday',        weekdayOnly:false, optional:true },
-  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'portion', color:'#86EFAC', freq:'Everyday',        weekdayOnly:false },
+  { id:'running',  name:'Running',           emoji:'🏃', type:'counter', color:'#F97316', freq:'Everyday',        weekdayOnly:false, optional:true, step:1, goal:5, max:10 },
+  { id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'counter', color:'#86EFAC', freq:'Everyday',        weekdayOnly:false, step:1, goal:5, max:10 },
   { id:'shower',   name:'Shower',            emoji:'🚿', type:'shower',  color:'#67E8F9', freq:'Everyday',        weekdayOnly:false },
   { id:'read',     name:'Read',              emoji:'📚', type:'good',    color:'#A78BFA', freq:'Everyday',        weekdayOnly:false, optional:true },
   { id:'cleaning', name:'Cleaning',          emoji:'🧹', type:'weekly',  color:'#4ADE80', freq:'Once a week',     weekdayOnly:false, optional:true },
@@ -61,7 +61,7 @@ const isDayActive = (habit, dateObj) => {
 
 function getDrinkMl(k) { const v=DB.habits['drink'].logs[k]; return typeof v==='number'?v:v==='done'?DRINK_GOAL:0; }
 function isDrinkDone(k) { return getDrinkMl(k)>=DRINK_GOAL; }
-function getPortions(k) { const v=DB.habits['fruits'].logs[k]; return typeof v==='number'?v:0; }
+function getPortions(k) { const v=DB.habits['fruits']?.logs[k]; return typeof v==='number'?v:0; }
 function isPortionDone(k) { return getPortions(k)>=PORTION_GOAL; }
 function getShowerState(k) { return DB.habits['shower'].logs[k]||null; }
 function isShowerDone(k) { const s=getShowerState(k); return s==='cold'||s==='lukewarm'; }
@@ -288,29 +288,65 @@ function afterToggle(id) {
   const el=document.querySelector(`[data-habit-id="${id}"]`);
   if(el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
 }
-function addDrink() {
-  const t=today(); const cur=getDrinkMl(t); const next=cur>=DRINK_MAX?0:cur+DRINK_STEP;
-  if(next===0){delete DB.habits['drink'].logs[t];playSound('undo');}
-  else{DB.habits['drink'].logs[t]=next; if(next>=DRINK_GOAL&&cur<DRINK_GOAL){playSound('drink');showToast('💧 Hydration goal reached! +10 XP');giveXP(10);}}
+function addDrink() { addDrinkAmount(DRINK_STEP); }
+function addDrinkAmount(ml) {
+  const t=today(); const cur=getDrinkMl(t);
+  if(cur>=DRINK_MAX) return;
+  const next=Math.min(DRINK_MAX, cur+ml);
+  DB.habits['drink'].logs[t]=next;
+  if(next>=DRINK_GOAL&&cur<DRINK_GOAL){playSound('drink');showToast('💧 Hydration goal reached! +10 XP');giveXP(10);}
   saveData(); checkAchievements(); renderActivePage();
+}
+function removeDrink() {
+  const t=today(); const cur=getDrinkMl(t); if(cur<=0) return;
+  const next=Math.max(0,cur-DRINK_STEP);
+  if(next===0){delete DB.habits['drink'].logs[t];playSound('undo');}
+  else{DB.habits['drink'].logs[t]=next; playSound('undo');}
+  saveData(); renderActivePage();
 }
 function addPortion() {
-  const t=today(); const cur=getPortions(t); const next=cur>=PORTION_MAX?0:cur+1;
-  if(next===0){delete DB.habits['fruits'].logs[t];playSound('undo');}
-  else{DB.habits['fruits'].logs[t]=next; if(next>=PORTION_GOAL&&cur<PORTION_GOAL){playSound('done');showToast('🥦 Portion goal reached! +10 XP');giveXP(10);}}
+  const t=today(); const cur=getPortions(t); if(cur>=PORTION_MAX) return;
+  const next=cur+1;
+  DB.habits['fruits'].logs[t]=next;
+  if(next>=PORTION_GOAL&&cur<PORTION_GOAL){playSound('done');showToast('🥦 Portion goal reached! +10 XP');giveXP(10);}
   saveData(); checkAchievements(); renderActivePage();
+}
+function removePortion() {
+  const t=today(); const cur=getPortions(t); if(cur<=0) return;
+  const next=cur-1;
+  if(next===0){delete DB.habits['fruits'].logs[t];}
+  else{DB.habits['fruits'].logs[t]=next;}
+  playSound('undo'); saveData(); renderActivePage();
 }
 function addCounter(id) {
-  const habit=HABITS.find(h=>h.id===id); const t=today(); const cur=getCounterVal(id,t); const next=cur>=habit.max?0:cur+habit.step;
-  if(next===0){delete DB.habits[id].logs[t];playSound('undo');}
-  else{DB.habits[id].logs[t]=next; if(next>=habit.goal&&cur<habit.goal){playSound('done');showToast(`${habit.emoji} Goal reached! +10 XP`);giveXP(10);}}
+  const habit=HABITS.find(h=>h.id===id); const t=today(); const cur=getCounterVal(id,t);
+  if(cur>=habit.max) return;
+  const next=cur+habit.step;
+  DB.habits[id].logs[t]=next;
+  if(next>=habit.goal&&cur<habit.goal){playSound('done');showToast(`${habit.emoji} Goal reached! +10 XP`);giveXP(10);}
   saveData(); checkAchievements(); renderActivePage();
 }
-function cycleShower() {
-  const t=today(); const states=['','cold','lukewarm','hot']; const cur=getShowerState(t)||'';
-  const nextIdx=(states.indexOf(cur)+1)%states.length; const next=states[nextIdx];
-  if(!next){delete DB.habits['shower'].logs[t];playSound('undo');}
-  else{DB.habits['shower'].logs[t]=next; const done=next==='cold'||next==='lukewarm'; if(done){playSound('done');if(next==='cold'){showToast('🧊 Cold shower! +10 XP');giveXP(10);}}}
+function removeCounter(id) {
+  const habit=HABITS.find(h=>h.id===id); const t=today(); const cur=getCounterVal(id,t);
+  if(cur<=0) return;
+  const next=Math.max(0,cur-habit.step);
+  if(next===0){delete DB.habits[id].logs[t];}
+  else{DB.habits[id].logs[t]=next;}
+  playSound('undo'); saveData(); checkAchievements(); renderActivePage();
+}
+function setShower(state) {
+  const t=today(); const cur=getShowerState(t)||'';
+  if(cur===state){
+    delete DB.habits['shower'].logs[t]; playSound('undo');
+  } else {
+    const wasDone=cur==='cold'||cur==='lukewarm';
+    DB.habits['shower'].logs[t]=state;
+    const isDone=state==='cold'||state==='lukewarm';
+    if(isDone){
+      playSound('done');
+      if(state==='cold'&&cur!=='cold'){showToast('🧊 Cold shower! +10 XP');giveXP(10);}
+    }
+  }
   saveData(); checkAchievements(); renderActivePage();
 }
 
@@ -346,11 +382,11 @@ function showPage(id) {
 }
 
 function renderActivePage() {
-  if(activePage==='home')     renderHome();
-  if(activePage==='moodstat') renderMoodStat();
-  if(activePage==='report')   renderReport();
-  if(activePage==='myhabits') renderMyHabits();
-  if(activePage==='account')  renderAccount();
+  if(activePage==='home')         renderHome();
+  if(activePage==='achievements') renderAchievements();
+  if(activePage==='report')       renderReport();
+  if(activePage==='myhabits')     renderMyHabits();
+  if(activePage==='account')      renderAccount();
 }
 
 function switchHomeTab(tab) {
@@ -425,22 +461,24 @@ function buildTodaySubLabel(habit,t,todayDate) {
 function buildTodayControl(habit,t,todayDate) {
   if(habit.type==='drink') {
     const ml=getDrinkMl(t); const pct=Math.min(100,Math.round((ml/DRINK_GOAL)*100));
+    const atMax=ml>=DRINK_MAX;
     return `<div style="width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:.75rem;color:var(--text-2)">${ml}ml / ${DRINK_GOAL}ml</span>
-        <button class="habit-toggle-btn${ml>=DRINK_GOAL?' done':''}" style="${ml>=DRINK_GOAL?`background:${habit.color}`:'border-color:'+habit.color}" onclick="addDrink()">
+        <button class="habit-toggle-btn${ml>=DRINK_GOAL?' done':''}" style="${ml>=DRINK_GOAL?`background:${habit.color}`:'border-color:'+habit.color}" onclick="removeDrink()">
           <svg class="check-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor"><polyline points="4 10 8 14 16 6"/></svg>
         </button>
       </div>
       <div class="drink-bar-track"><div class="drink-bar-fill" style="width:${pct}%;background:${habit.color}"></div></div>
-      <div class="drink-btns">
-        <button class="drink-btn" onclick="addDrink()">+250ml</button>
-        <button class="drink-btn" onclick="addDrink()">+500ml</button>
-      </div>
+      ${atMax?'':`<div class="drink-btns">
+        <button class="drink-btn" onclick="addDrinkAmount(250)">+250ml</button>
+        <button class="drink-btn" onclick="addDrinkAmount(500)">+500ml</button>
+      </div>`}
     </div>`;
   }
   if(habit.type==='portion') {
     const p=getPortions(t); const pct=Math.min(100,Math.round((p/PORTION_GOAL)*100));
+    const atMax=p>=PORTION_MAX;
     return `<div style="width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:.75rem;color:var(--text-2)">${p} / ${PORTION_GOAL} portions</span>
@@ -449,27 +487,38 @@ function buildTodayControl(habit,t,todayDate) {
         </button>
       </div>
       <div class="drink-bar-track"><div class="drink-bar-fill" style="width:${pct}%;background:${habit.color}"></div></div>
+      <div class="counter-row" style="width:100%;justify-content:space-between;margin-top:8px">
+        <button class="counter-btn" onclick="removePortion()">−</button>
+        <span class="counter-val">${p} / ${PORTION_GOAL}</span>
+        ${atMax?'<div style="width:34px"></div>':`<button class="counter-btn" onclick="addPortion()" style="${p>=PORTION_GOAL?`background:${habit.color+'30'};color:${habit.color}`:''}">+</button>`}
+      </div>
     </div>`;
   }
   if(habit.type==='counter') {
-    const v=getCounterVal(habit.id,t); const done=v>=habit.goal;
+    const v=getCounterVal(habit.id,t); const done=v>=habit.goal; const atMax=v>=habit.max;
     return `<div class="counter-row" style="width:100%;justify-content:space-between;margin-top:0">
-      <button class="counter-btn" onclick="addCounter('${habit.id}')">−</button>
+      <button class="counter-btn" onclick="removeCounter('${habit.id}')">−</button>
       <span class="counter-val">${v} / ${habit.goal}</span>
-      <button class="counter-btn" onclick="addCounter('${habit.id}')" style="${done?`background:${habit.color+'30'};color:${habit.color}`:''}">+</button>
+      ${atMax?'<div style="width:34px"></div>':`<button class="counter-btn" onclick="addCounter('${habit.id}')" style="${done?`background:${habit.color+'30'};color:${habit.color}`:''}">+</button>`}
     </div>`;
   }
   if(habit.type==='shower') {
     const s=getShowerState(t)||'';
     return `<div class="shower-btns" style="width:100%;margin-top:0">
-      <button class="shower-btn${s==='cold'?' active-cold':''}" onclick="cycleShower()">🧊 Cold</button>
-      <button class="shower-btn${s==='lukewarm'?' active-lk':''}" onclick="cycleShower()">🌡 Lukewarm</button>
-      <button class="shower-btn${s==='hot'?' active-hot':''}" onclick="cycleShower()">🔥 Hot</button>
+      <button class="shower-btn${s==='cold'?' active-cold':''}" onclick="setShower('cold')">🧊 Cold</button>
+      <button class="shower-btn${s==='lukewarm'?' active-lk':''}" onclick="setShower('lukewarm')">🌡 Lukewarm</button>
+      <button class="shower-btn${s==='hot'?' active-hot':''}" onclick="setShower('hot')">🔥 Hot</button>
     </div>`;
   }
   if(habit.type==='bad') {
     const fail=isBadFail(habit.id,t);
-    return `<button class="bad-badge ${fail?'fail':'ok'}" onclick="toggleHabit('${habit.id}')">${fail?'✕ Slipped':'✓ Clean'}</button>`;
+    return `<button class="habit-toggle-btn${fail?' done':''}"
+      style="${fail?'background:#F76F6F;border-color:#F76F6F':'border-color:#4BD08B90'}"
+      onclick="toggleHabit('${habit.id}')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        ${fail?'<line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>':'<polyline points="4 10 8 14 16 6"/>'}
+      </svg>
+    </button>`;
   }
   const done=habit.type==='weekly'?isWeeklyDoneForWeek(habit.id,getWeekMonday(todayDate)):DB.habits[habit.id].logs[t]==='done';
   return `<button class="habit-toggle-btn${done?' done':''}" style="${done?`background:${habit.color};border-color:${habit.color}`:`border-color:${habit.color+'80'}`}" onclick="toggleHabit('${habit.id}')">
@@ -633,12 +682,12 @@ function renderMoodStat() {
     </div>
   `;
 }
-function moodCalPrev() { moodCalMonth.setMonth(moodCalMonth.getMonth()-1); renderMoodStat(); }
-function moodCalNext() { const nm=new Date(moodCalMonth); nm.setMonth(nm.getMonth()+1); if(nm<=new Date()) moodCalMonth=nm; renderMoodStat(); }
+function moodCalPrev() { moodCalMonth.setMonth(moodCalMonth.getMonth()-1); renderActivePage(); }
+function moodCalNext() { const nm=new Date(moodCalMonth); nm.setMonth(nm.getMonth()+1); if(nm<=new Date()) moodCalMonth=nm; renderActivePage(); }
 
 let currentMoodDate=null;
 let selectedMoodValue=null;
-let selectedFeeling=null;
+let selectedFeelings=[];
 
 function checkDailyMood() {
   if(sessionStorage.getItem('moodChecked')) return;
@@ -651,7 +700,7 @@ function checkDailyMood() {
 function openMoodManual() { openMoodModal(today()); }
 
 function openMoodModal(dateKey) {
-  currentMoodDate=dateKey; selectedMoodValue=null; selectedFeeling=null;
+  currentMoodDate=dateKey; selectedMoodValue=null; selectedFeelings=[];
   document.getElementById('moodStep1').classList.remove('hidden');
   document.getElementById('moodStep2').classList.add('hidden');
   document.querySelectorAll('.mood-emoji-card').forEach(b=>b.classList.remove('selected'));
@@ -670,35 +719,72 @@ function selectMoodCard(value) {
 
 function goToMoodStep2() {
   if(!selectedMoodValue) return;
+  selectedFeelings=[];
   const title=document.getElementById('moodStep2Title');
   title.textContent=`${MOOD_LABELS[selectedMoodValue]}! How would you describe your feelings?`;
-
   const feelings=FEELINGS_BY_MOOD[selectedMoodValue]||[];
   const grid=document.getElementById('feelingsGrid');
   grid.innerHTML=feelings.map(f=>`<button class="feeling-tag" onclick="selectFeeling('${f}',this)">${f}</button>`).join('');
-  document.getElementById('feelingsConfirmBtn').textContent=`I Feel ${MOOD_LABELS[selectedMoodValue]}!`;
+  document.getElementById('feelingsConfirmBtn').textContent='Confirm my choice';
   document.getElementById('moodStep1').classList.add('hidden');
   document.getElementById('moodStep2').classList.remove('hidden');
 }
 
 function selectFeeling(feeling, btn) {
-  selectedFeeling=feeling;
-  document.querySelectorAll('.feeling-tag').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('feelingsConfirmBtn').textContent=`I Feel ${feeling}!`;
+  btn.classList.toggle('selected');
+  if(btn.classList.contains('selected')) {
+    if(!selectedFeelings.includes(feeling)) selectedFeelings.push(feeling);
+  } else {
+    selectedFeelings=selectedFeelings.filter(f=>f!==feeling);
+  }
 }
 
 function saveMoodWithFeelings() {
   if(!currentMoodDate||!selectedMoodValue) return;
   DB.moods[currentMoodDate]=selectedMoodValue;
-  if(selectedFeeling){
+  if(selectedFeelings.length>0){
     if(!DB.profile.moodFeelings) DB.profile.moodFeelings={};
-    DB.profile.moodFeelings[currentMoodDate]=selectedFeeling;
+    DB.profile.moodFeelings[currentMoodDate]=selectedFeelings.join(',');
   }
   saveData();
   closeMoodModal();
-  if(activePage==='moodstat') renderMoodStat();
+  if(activePage==='report') renderReport();
   showToast(`${MOOD_EMOJIS[selectedMoodValue]} Mood logged!`,2000);
+}
+
+function buildMoodCalHtml() {
+  const year=moodCalMonth.getFullYear(); const month=moodCalMonth.getMonth();
+  const firstDay=new Date(year,month,1); const lastDay=new Date(year,month+1,0);
+  const startDow=firstDay.getDay()===0?6:firstDay.getDay()-1;
+  const today_=today();
+  let headers=DAY_SHORT.map(d=>`<div class="mood-cal-header">${d[0]}${d[1]}</div>`).join('');
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div></div>`;
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateObj=new Date(year,month,d); const k=fmtDate(dateObj); const mood=DB.moods[k];
+    const isFuture=k>today_;
+    if(mood!==undefined&&!isFuture){
+      cells+=`<div class="mood-cal-cell">
+        <div class="mood-cal-emoji">${MOOD_EMOJIS[mood]||'😐'}</div>
+        <div class="mood-cal-day-label" style="font-size:.55rem">${d}</div>
+      </div>`;
+    } else if(!isFuture){
+      cells+=`<div class="mood-cal-cell">
+        <div class="mood-cal-empty" onclick="openMoodModal('${k}')">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="7" y1="3" x2="7" y2="11"/><line x1="3" y1="7" x2="11" y2="7"/></svg>
+        </div>
+        <div class="mood-cal-day-label">${d}</div>
+      </div>`;
+    } else {
+      cells+=`<div class="mood-cal-cell"><div class="mood-cal-day-label" style="opacity:.3">${d}</div></div>`;
+    }
+  }
+  return `<div class="mood-cal-nav" style="margin-bottom:16px">
+    <button class="mood-cal-nav-btn" onclick="moodCalPrev()"><svg viewBox="0 0 18 18"><polyline points="12 4 6 9 12 14"/></svg></button>
+    <div class="mood-cal-month">${MONTH_NAMES[month]} ${year}</div>
+    <button class="mood-cal-nav-btn" onclick="moodCalNext()"><svg viewBox="0 0 18 18"><polyline points="6 4 12 9 6 14"/></svg></button>
+  </div>
+  <div class="mood-cal-grid">${headers}${cells}</div>`;
 }
 
 function renderReport() {
@@ -712,7 +798,6 @@ function renderReport() {
 
   const barData=buildBarData();
   const calHtml=buildCalStats();
-  const moodChartHtml=buildMoodChart();
 
   container.innerHTML=`
     <div class="report-wrap">
@@ -774,6 +859,14 @@ function renderReport() {
           ${DAY_SHORT.map(d=>`<div class="cal-stats-header">${d[0]}${d[1]}</div>`).join('')}
           ${calHtml}
         </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-title">Mood Calendar</div>
+          <div class="report-period-badge" style="cursor:pointer" onclick="openMoodManual()">+ Log mood</div>
+        </div>
+        ${buildMoodCalHtml()}
       </div>
 
       <div class="report-card">
@@ -964,6 +1057,56 @@ function renderMyHabits() {
 
 function openAddHabit() { showToast('💡 Habit management coming soon!',2500); }
 
+function renderAchievements() {
+  const container=document.getElementById('achievementsContent'); if(!container) return;
+  const unlocked=DB.unlockedAchievements.length;
+  const total=ACHIEVEMENTS.length;
+  const pct=Math.round((unlocked/total)*100);
+
+  const categories=[
+    { label:'Streaks & Consistency', ids:['consistent','dedicated','camel','hydration','bookworm','digital','night_tmd','plant_pwr','phonefree','king','sugarfree','ice_king'] },
+    { label:'Milestones & XP',       ids:['first_habit','centurion','xp_500','on_fire','transcend'] },
+    { label:'Perfect Days',          ids:['perfect_wk','perfectist','ironwill'] },
+  ];
+
+  const renderBadge=(a,i)=>{
+    const isUnlocked=DB.unlockedAchievements.includes(a.id);
+    return `<div class="achievement-badge ${isUnlocked?'unlocked':'locked'}" style="animation-delay:${i*.04}s">
+      ${isUnlocked?'<div class="ach-unlocked-badge">✓</div>':''}
+      <div class="ach-emoji">${a.emoji}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+    </div>`;
+  };
+
+  const sectionsHtml=categories.map(cat=>{
+    const badges=cat.ids.map((id,i)=>{
+      const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a) return '';
+      return renderBadge(a,i);
+    }).join('');
+    return `<div class="ach-section">
+      <div class="account-section-title">${cat.label}</div>
+      <div class="achievements-grid">${badges}</div>
+    </div>`;
+  }).join('');
+
+  const categorised=categories.flatMap(c=>c.ids);
+  const otherBadges=ACHIEVEMENTS.filter(a=>!categorised.includes(a.id)).map(renderBadge).join('');
+  const otherSection=otherBadges?`<div class="ach-section"><div class="account-section-title">Other</div><div class="achievements-grid">${otherBadges}</div></div>`:'';
+
+  container.innerHTML=`<div class="account-wrap">
+    <div class="xp-card" style="margin-bottom:0">
+      <div class="xp-card-row">
+        <span class="xp-label">🏆 Achievements Unlocked</span>
+        <span class="xp-value">${unlocked} / ${total}</span>
+      </div>
+      <div class="xp-bar-track"><div class="xp-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    ${sectionsHtml}
+    ${otherSection}
+  </div>`;
+}
+
 function renderAccount() {
   const container=document.getElementById('accountContent'); if(!container) return;
   const level=calcLevel(DB.xp); const prog=xpProgress(DB.xp);
@@ -974,15 +1117,8 @@ function renderAccount() {
   const darkOn=DB.profile.darkMode===true;
   const notifsOn=!!DB.profile.notifsEnabled;
 
-  const achHtml=ACHIEVEMENTS.map((a,i)=>{
-    const unlocked=DB.unlockedAchievements.includes(a.id);
-    return `<div class="achievement-badge ${unlocked?'unlocked':'locked'}" style="animation-delay:${i*.03}s">
-      ${unlocked?'<div class="ach-unlocked-badge">✓</div>':''}
-      <div class="ach-emoji">${a.emoji}</div>
-      <div class="ach-name">${a.name}</div>
-      <div class="ach-desc">${a.desc}</div>
-    </div>`;
-  }).join('');
+  const achCount=DB.unlockedAchievements.length;
+  const achTotal=ACHIEVEMENTS.length;
 
   container.innerHTML=`<div class="account-wrap">
     <div class="account-profile-card">
@@ -1027,11 +1163,6 @@ function renderAccount() {
           <button class="pref-toggle ${notifsOn?'on':'off'}" onclick="toggleNotifications()">${notifsOn?'ON':'OFF'}</button>
         </div>
       </div>
-    </div>
-
-    <div class="achievements-section">
-      <div class="account-section-title">Achievements (${DB.unlockedAchievements.length}/${ACHIEVEMENTS.length})</div>
-      <div class="achievements-grid">${achHtml}</div>
     </div>
 
     <div class="danger-zone-card">

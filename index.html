@@ -52,13 +52,8 @@
     <div class="tab-panel hidden" id="tab-overall">
       <div class="habits-list" id="overallHabits"></div>
     </div>
-    <button class="fab" onclick="openAddHabit()" aria-label="Add habit">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-    </button>
   </div>
-  <div class="page hidden" id="page-moodstat">
+  <div class="page hidden" id="page-achievements">
     <div class="page-header">
       <div class="logo-mark">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -66,15 +61,10 @@
           <text x="14" y="19" text-anchor="middle" font-size="14">🐾</text>
         </svg>
       </div>
-      <div class="page-title">Mood Stat</div>
-      <button class="header-action-btn" onclick="openMoodManual()" aria-label="Log mood">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z"/>
-          <path d="M10 6v4l3 3"/>
-        </svg>
-      </button>
+      <div class="page-title">Achievements</div>
+      <div style="width:36px"></div>
     </div>
-    <div id="moodStatContent"></div>
+    <div id="achievementsContent"></div>
   </div>
   <div class="page hidden" id="page-report">
     <div class="page-header">
@@ -85,11 +75,10 @@
         </svg>
       </div>
       <div class="page-title">Report</div>
-      <button class="header-action-btn" aria-label="Options">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
-          <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-          <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+      <button class="header-action-btn" onclick="openMoodManual()" aria-label="Log mood">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="10" cy="10" r="8"/><path d="M7 13s1.2 1.5 3 1.5 3-1.5 3-1.5"/>
+          <circle cx="7.5" cy="8" r="1"/><circle cx="12.5" cy="8" r="1"/>
         </svg>
       </button>
     </div>
@@ -133,14 +122,14 @@
       </svg>
       <span class="nav-label">Home</span>
     </button>
-    <button class="nav-btn" id="nav-moodstat" onclick="showPage('moodstat')" aria-label="Mood Stat">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-        <line x1="9" y1="9.5" x2="9.01" y2="9.5"/>
-        <line x1="15" y1="9.5" x2="15.01" y2="9.5"/>
+    <button class="nav-btn" id="nav-achievements" onclick="showPage('achievements')" aria-label="Achievements">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 21h8M12 17v4"/>
+        <path d="M5 4h14l-2 9H7L5 4z"/>
+        <path d="M5 4H3M19 4h2"/>
+        <path d="M7 13c0 2.76 2.24 4 5 4s5-1.24 5-4"/>
       </svg>
-      <span class="nav-label">Mood Stat</span>
+      <span class="nav-label">Achievements</span>
     </button>
     <button class="nav-btn" id="nav-report" onclick="showPage('report')" aria-label="Report">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

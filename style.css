@@ -1111,7 +1111,7 @@ svg { display: block; }
 
 .mood-confirm-btn {
   width: calc(100% - 32px);
-  margin: 0 16px;
+  margin: 0 16px 16px;
   height: 52px;
   border-radius: 50px;
   background: var(--accent);
@@ -1122,9 +1122,7 @@ svg { display: block; }
   transition: all 0.2s;
 }
 .mood-confirm-btn:disabled {
-  background: var(--border);
-  color: var(--text-3);
-  box-shadow: none;
+  display: none;
 }
 .mood-confirm-btn:not(:disabled) { box-shadow: 0 4px 16px rgba(124,111,247,0.35); }
 
@@ -1305,4 +1303,19 @@ canvas { display: block; width: 100% !important; }
 
 body, .habit-card, .bottom-nav, .page-header, .nav-btn, .tab-btn {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.ach-section {
+  margin-bottom: 8px;
+}
+.ach-section .account-section-title {
+  margin-bottom: 12px;
+}
+
+#moodStep2 {
+  padding-bottom: 8px;
+}
+
+.habit-toggle-btn[style*="4BD08B"] svg {
+  stroke: #4BD08B;
 }
