@@ -3,7 +3,8 @@ const HABITS = [
   {id:'projets',  name:'Personal Projects', emoji:'🚀', type:'good',    color:'#A78BFA', freq:'Everyday',        weekdayOnly:false},
   {id:'work',     name:'Work',              emoji:'💼', type:'good',    color:'#FBBF24', freq:'5 days per week', weekdayOnly:true},
   {id:'gym',      name:'Gym',               emoji:'🏋️', type:'good',    color:'#4ADE80', freq:'5 days per week', weekdayOnly:true},
-  {id:'running',  name:'Running',           emoji:'🏃', type:'counter', color:'#F97316', freq:'5 days per week', weekdayOnly:false, step:1, goal:5, max:15},
+  {id:'running',  name:'Running',           emoji:'🏃', type:'counter', color:'#F97316', freq:'5 days per week', weekdayOnly:false, step:1, goal:5, max:15, unit:'km'},
+  {id:'setp',     name:'Setps',             emoji:'👣', type:'counter', color:'#34D399', freq:'Everyday',        weekdayOnly:false, step:1000, goal:10000, max:20000, unit:'steps'},
   {id:'drink',    name:'Drink Water',       emoji:'💧', type:'drink',   color:'#38BDF8', freq:'Everyday',        weekdayOnly:false},
   {id:'fruits',   name:'Fruits & Veggies',  emoji:'🥦', type:'counter', color:'#86EFAC', freq:'Everyday',        weekdayOnly:false, step:1, goal:3, max:10},
   {id:'clean',    name:'Clean',             emoji:'🫧', type:'counter', color:'#A3E635', freq:'Everyday',        weekdayOnly:false, step:1, goal:2, max:3},
@@ -20,6 +21,7 @@ const HABITS = [
 const DRINK_GOAL = 2000;
 const DRINK_STEP = 250;
 const DRINK_MAX  = 5000;
+
 const PORTION_GOAL = 5;
 const PORTION_MAX  = 10;
 
@@ -40,8 +42,9 @@ const FEELINGS_BY_MOOD = {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTH_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY_SHORT   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
 const DAY_FULL    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_SHORT   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const fmtDate = d => {
   const y = d.getFullYear();
@@ -104,7 +107,6 @@ if(!DB.unlockedAchievements) DB.unlockedAchievements=[];
 if(!DB.moods) DB.moods={};
 if(!DB.perfectDaysClaimed) DB.perfectDaysClaimed=[];
 if(!DB.penaltiesApplied) DB.penaltiesApplied=[];
-if(DB.profile.hardcoreMode===undefined) DB.profile.hardcoreMode=false;
 if(DB.profile.notifsEnabled===undefined) DB.profile.notifsEnabled=false;
 if(DB.profile.darkMode===undefined) DB.profile.darkMode=false;
 if(!DB.profile.moodFeelings) DB.profile.moodFeelings={};
@@ -218,6 +220,8 @@ const ACHIEVEMENTS = [
   { id:'hydration',   emoji:'🌊', name:'Hydration Master', desc:'30-day water goal streak',               check:()=>{const h=HABITS.find(x=>x.id==='drink');return h&&calcStreak(h).current>=30;} },
   { id:'phonefree',   emoji:'🧘', name:'Phone Free',       desc:'21-day phone-out-of-bed streak',         check:()=>{const h=HABITS.find(x=>x.id==='phoneoob');return h&&calcStreak(h).current>=21;} },
   { id:'transcend',   emoji:'🌌', name:'Transcendent',     desc:'Reach the maximum level',                check:()=>calcLevel(DB.xp)>=LEVEL_THRESHOLDS.length },
+  { id:'walker',      emoji:'👣', name:'Walker',           desc:'10 000 steps streak for 7 days',         check:()=>{const h=HABITS.find(x=>x.id==='setp');return h&&calcStreak(h).current>=7;} },
+  { id:'marathoner',  emoji:'🏅', name:'Marathoner',       desc:'10 000 steps streak for 30 days',        check:()=>{const h=HABITS.find(x=>x.id==='setp');return h&&calcStreak(h).current>=30;} },
 ];
 
 function checkPerfectWeek() {
@@ -250,15 +254,7 @@ function checkPerfectDayBonus() {
   const t=today(); if(DB.perfectDaysClaimed.includes(t)) return;
   if(countDoneToday()===requiredToday()){ DB.perfectDaysClaimed.push(t); giveXP(50); setTimeout(()=>showToast('🌟 Perfect Day! +50 XP bonus',3500),600); saveData(); }
 }
-function checkDailyPenalties() {
-  if(!DB.profile.hardcoreMode) return;
-  const yest=fmtDate(addDays(new Date(),-1)); if(yest<DB.createdAt) return;
-  if(DB.penaltiesApplied.includes(yest)) return;
-  DB.penaltiesApplied.push(yest);
-  const yestDate=parseDate(yest); let missed=0;
-  HABITS.forEach(h=>{ if(h.type!=='good') return; if(!isDayActive(h,yestDate)) return; if(DB.habits[h.id].logs[yest]!=='done') missed++; });
-  if(missed>0){ const p=missed*5; loseXP(p); saveData(); setTimeout(()=>{playSound('fail');showToast(`⚡ Hardcore: -${p} XP — ${missed} habit${missed>1?'s':''} missed`,4000);},800); }
-}
+function checkDailyPenalties() {}
 
 function toggleHabit(id) {
   const habit=HABITS.find(h=>h.id===id); const t=today();
@@ -445,7 +441,7 @@ function buildTodaySubLabel(habit,t,todayDate) {
     const p=getPortions(t); return `${p} / ${PORTION_GOAL} portions${streak>0?` · 🔥 ${streak}d`:''}`;
   }
   if(habit.type==='counter') {
-    const v=getCounterVal(habit.id,t); return `${v} / ${habit.goal}${streak>0?` · 🔥 ${streak}d`:''}`;
+    const v=getCounterVal(habit.id,t); const u=habit.unit?` ${habit.unit}`:''; return `${v}${u} / ${habit.goal}${u}${streak>0?` · 🔥 ${streak}d`:''}`;
   }
   if(habit.type==='shower') {
     const s=getShowerState(t); const lbl=s?`${s.charAt(0).toUpperCase()+s.slice(1)} shower`:'Not logged';
@@ -496,9 +492,10 @@ function buildTodayControl(habit,t,todayDate) {
   }
   if(habit.type==='counter') {
     const v=getCounterVal(habit.id,t); const done=v>=habit.goal; const atMax=v>=habit.max;
+    const u=habit.unit?` ${habit.unit}`:'';
     return `<div class="counter-row" style="width:100%;justify-content:space-between;margin-top:0">
       <button class="counter-btn" onclick="removeCounter('${habit.id}')">−</button>
-      <span class="counter-val">${v} / ${habit.goal}</span>
+      <span class="counter-val">${v}${u} / ${habit.goal}${u}</span>
       ${atMax?'<div style="width:34px"></div>':`<button class="counter-btn" onclick="addCounter('${habit.id}')" style="${done?`background:${habit.color+'30'};color:${habit.color}`:''}">+</button>`}
     </div>`;
   }
@@ -1113,7 +1110,6 @@ function renderAccount() {
   const name=DB.profile.name||'Habit Builder';
   const soundOn=DB.profile.soundEnabled!==false;
   const zenOn=!!DB.profile.zenMode;
-  const hardcoreOn=!!DB.profile.hardcoreMode;
   const darkOn=DB.profile.darkMode===true;
   const notifsOn=!!DB.profile.notifsEnabled;
 
@@ -1155,10 +1151,6 @@ function renderAccount() {
           <button class="pref-toggle ${zenOn?'on':'off'}" onclick="togglePref('zen')">${zenOn?'ON':'OFF'}</button>
         </div>
         <div class="pref-row">
-          <div class="pref-info"><span class="pref-icon">💀</span><div><div class="pref-label-text">Hardcore mode</div><div class="pref-hint">-5 XP per missed habit</div></div></div>
-          <button class="pref-toggle ${hardcoreOn?'on':'off'}" onclick="togglePref('hardcore')">${hardcoreOn?'ON':'OFF'}</button>
-        </div>
-        <div class="pref-row">
           <div class="pref-info"><span class="pref-icon">🔔</span><div><div class="pref-label-text">Notifications</div><div class="pref-hint">Daily reminders</div></div></div>
           <button class="pref-toggle ${notifsOn?'on':'off'}" onclick="toggleNotifications()">${notifsOn?'ON':'OFF'}</button>
         </div>
@@ -1178,12 +1170,10 @@ function openProfile() {
   const dark=DB.profile.darkMode===true;
   const sound=DB.profile.soundEnabled!==false;
   const zen=!!DB.profile.zenMode;
-  const hardcore=!!DB.profile.hardcoreMode;
   const notifs=!!DB.profile.notifsEnabled;
   updateToggleBtn('themeToggle',dark);
   updateToggleBtn('soundToggle',sound);
   updateToggleBtn('zenToggle',zen);
-  updateToggleBtn('hardcoreToggle',hardcore);
   updateToggleBtn('notifsToggle',notifs);
   document.getElementById('profileModal').classList.add('open');
   setTimeout(()=>document.getElementById('pseudoInput').focus(),80);
@@ -1201,7 +1191,6 @@ function saveProfileName() {
 function togglePref(pref) {
   if(pref==='sound')    { DB.profile.soundEnabled=DB.profile.soundEnabled===false; }
   if(pref==='zen')      { DB.profile.zenMode=!DB.profile.zenMode; if(!DB.profile.zenMode) document.querySelectorAll('.habit-card.zen-collapse').forEach(el=>el.classList.remove('zen-collapse')); }
-  if(pref==='hardcore') { DB.profile.hardcoreMode=!DB.profile.hardcoreMode; }
   saveData();
   openProfile();
   closeProfile();
