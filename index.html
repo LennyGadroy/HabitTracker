@@ -38,6 +38,47 @@
         </svg>
       </button>
     </div>
+    <div class="wellness-section">
+      <div class="wellness-card mindfulness-card">
+        <div class="wellness-card-header">
+          <div class="wellness-card-title-row">
+            <span class="wellness-icon">🧘</span>
+            <span class="wellness-title">Mindfulness</span>
+            <span class="wellness-beta">Beta</span>
+          </div>
+        </div>
+        <div class="mind-tiles">
+          <button class="mind-tile mood-tile" onclick="openMoodManual()">
+            <div class="mind-tile-bg mood-bg">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" fill="rgba(255,130,80,0.25)"/><path d="M12 21s2 3 6 3 6-3 6-3" stroke="#FF7A40" stroke-width="2" stroke-linecap="round"/><circle cx="13.5" cy="15.5" r="1.5" fill="#FF7A40"/><circle cx="22.5" cy="15.5" r="1.5" fill="#FF7A40"/></svg>
+            </div>
+            <span>Mood check-in</span>
+          </button>
+          <button class="mind-tile breath-tile" onclick="openBreathing()">
+            <div class="mind-tile-bg breath-bg">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="10" fill="rgba(120,100,240,0.3)"/><circle cx="18" cy="18" r="6" fill="rgba(120,100,240,0.5)"/><circle cx="18" cy="18" r="3" fill="#8B7CF8"/></svg>
+            </div>
+            <span>Breathing exercises</span>
+          </button>
+          <button class="mind-tile meditation-tile" onclick="openMeditation()">
+            <div class="mind-tile-bg meditation-bg">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="10" r="4" fill="rgba(60,180,120,0.8)"/><path d="M10 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="rgba(60,180,120,0.9)" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="10" cy="26" rx="3" ry="2" fill="rgba(60,180,120,0.6)"/><ellipse cx="26" cy="26" rx="3" ry="2" fill="rgba(60,180,120,0.6)"/></svg>
+            </div>
+            <span>Meditation</span>
+          </button>
+        </div>
+      </div>
+      <div class="wellness-card sleep-summary-card">
+        <div class="wellness-card-header">
+          <div class="wellness-card-title-row">
+            <div class="sleep-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+            <span class="wellness-title">Sleep</span>
+          </div>
+          <button class="sleep-enter-btn" onclick="openSleepEntry()">Enter</button>
+        </div>
+        <div id="sleepSummaryDisplay" class="sleep-summary-display"></div>
+      </div>
+    </div>
     <div class="tabs-row">
       <button class="tab-btn active" id="tab-btn-today" onclick="switchHomeTab('today')">Today</button>
       <button class="tab-btn" id="tab-btn-weekly" onclick="switchHomeTab('weekly')">Weekly</button>
@@ -260,6 +301,95 @@
     </div>
   </div>
 </div>
+<div id="breathingOverlay" class="breathing-overlay">
+  <div class="breathing-inner">
+    <button class="breathing-close" onclick="closeBreathing()">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="18" y2="18"/><line x1="18" y1="2" x2="2" y2="18"/></svg>
+    </button>
+    <div class="breathing-title">Breathing Exercises</div>
+    <div class="breath-pattern-row">
+      <button class="breath-pattern-btn active" data-pattern="box" onclick="selectBreathPattern('box')">Box 4-4-4-4</button>
+      <button class="breath-pattern-btn" data-pattern="478" onclick="selectBreathPattern('478')">4-7-8</button>
+      <button class="breath-pattern-btn" data-pattern="calm" onclick="selectBreathPattern('calm')">Calm 5-2-5</button>
+    </div>
+    <div class="breathing-visual">
+      <div class="breath-circle-outer">
+        <div class="breath-circle-mid">
+          <div class="breath-circle-inner" id="breathCircle">
+            <span id="breathCountdown" class="breath-countdown">4</span>
+          </div>
+        </div>
+      </div>
+      <div id="breathPhaseLabel" class="breath-phase-label">Prêt</div>
+    </div>
+    <div class="breath-rounds-display">
+      <span id="breathRoundsCount" class="breath-rounds-num">0</span>
+      <span class="breath-rounds-label"> rounds completed</span>
+    </div>
+    <div id="breathPatternDesc" class="breath-pattern-desc">Inhale 4s · Hold 4s · Exhale 4s · Hold 4s</div>
+    <button id="breathStartBtn" class="breath-start-btn" onclick="toggleBreathing()">▶ Start</button>
+  </div>
+</div>
+<div id="meditationOverlay" class="modal-overlay" onclick="closeMeditation()">
+  <div class="modal-card meditation-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Meditation</div>
+      <button class="modal-x" onclick="closeMeditation()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="16" y2="16"/><line x1="16" y1="2" x2="2" y2="16"/></svg>
+      </button>
+    </div>
+    <div class="meditation-coming-soon">
+      <div class="meditation-cs-icon">🧘</div>
+      <div class="meditation-cs-title">En cours de création</div>
+      <div class="meditation-cs-desc">Les sessions de méditation guidée arrivent bientôt. Reste à l'écoute !</div>
+      <div class="meditation-cs-badge">Bientôt disponible</div>
+    </div>
+  </div>
+</div>
+<div id="sleepEntryModal" class="modal-overlay" onclick="closeSleepEntry()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Log Sleep</div>
+      <button class="modal-x" onclick="closeSleepEntry()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="16" y2="16"/><line x1="16" y1="2" x2="2" y2="16"/></svg>
+      </button>
+    </div>
+    <div class="modal-section">
+      <label class="modal-label">Sleep duration</label>
+      <div class="sleep-duration-row">
+        <div class="sleep-input-group">
+          <input type="number" id="sleepHours" class="sleep-num-input" min="0" max="23" placeholder="8" value="">
+          <span class="sleep-unit">h</span>
+        </div>
+        <div class="sleep-input-group">
+          <input type="number" id="sleepMinutes" class="sleep-num-input" min="0" max="59" placeholder="00" value="">
+          <span class="sleep-unit">min</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <label class="modal-label">Bedtime & Wake up (optional)</label>
+      <div class="sleep-time-row">
+        <div class="sleep-time-field">
+          <label class="sleep-time-label">🌙 Coucher</label>
+          <input type="time" id="sleepBedtime" class="sleep-time-input">
+        </div>
+        <div class="sleep-time-field">
+          <label class="sleep-time-label">☀️ Réveil</label>
+          <input type="time" id="sleepWakeTime" class="sleep-time-input">
+        </div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <label class="modal-label">Date</label>
+      <input type="date" id="sleepDate" class="sleep-date-input pseudo-input" style="width:100%">
+    </div>
+    <div style="padding: 0 20px 20px">
+      <button class="modal-save-btn" style="width:100%;height:50px;border-radius:14px;font-size:.95rem" onclick="saveSleepEntry()">Save Sleep</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 <canvas class="confetti-overlay" id="confettiCanvas"></canvas>
 <script src="script.js"></script>

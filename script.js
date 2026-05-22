@@ -398,6 +398,7 @@ function renderHome() {
   if(activeHomeTab==='today')   renderTodayTab();
   if(activeHomeTab==='weekly')  renderWeeklyTab();
   if(activeHomeTab==='overall') renderOverallTab();
+  renderSleepSummary();
 }
 
 function renderTodayTab() {
@@ -1244,11 +1245,195 @@ function confirmReset() {
   }
 }
 
+const BREATHING_PATTERNS = {
+  box:  { name:'Box Breathing', phases:['Inhale','Hold','Exhale','Hold'], durations:[4,4,4,4], desc:'Inhale 4s · Hold 4s · Exhale 4s · Hold 4s' },
+  '478':{ name:'4-7-8',         phases:['Inhale','Hold','Exhale'],        durations:[4,7,8],   desc:'Inhale 4s · Hold 7s · Exhale 8s' },
+  calm: { name:'Calm',          phases:['Inhale','Hold','Exhale'],        durations:[5,2,5],   desc:'Inhale 5s · Hold 2s · Exhale 5s' },
+};
+
+let breath = {
+  active: false,
+  pattern: 'box',
+  phaseIdx: 0,
+  secondsLeft: 0,
+  rounds: 0,
+  timer: null,
+};
+
+function openBreathing() {
+  document.getElementById('breathingOverlay').classList.add('open');
+  resetBreathDisplay();
+}
+function closeBreathing() {
+  stopBreathing();
+  document.getElementById('breathingOverlay').classList.remove('open');
+}
+
+function selectBreathPattern(p) {
+  breath.pattern = p;
+  document.querySelectorAll('.breath-pattern-btn').forEach(b => b.classList.toggle('active', b.dataset.pattern===p));
+  document.getElementById('breathPatternDesc').textContent = BREATHING_PATTERNS[p].desc;
+  if(breath.active) stopBreathing();
+  resetBreathDisplay();
+}
+
+function resetBreathDisplay() {
+  breath.rounds = 0;
+  document.getElementById('breathRoundsCount').textContent = '0';
+  document.getElementById('breathPhaseLabel').textContent = 'Prêt';
+  document.getElementById('breathCountdown').textContent = BREATHING_PATTERNS[breath.pattern].durations[0];
+  document.getElementById('breathPatternDesc').textContent = BREATHING_PATTERNS[breath.pattern].desc;
+  const circle = document.getElementById('breathCircle');
+  circle.className = 'breath-circle-inner';
+  circle.style.animationDuration = '';
+  document.getElementById('breathStartBtn').textContent = '▶ Start';
+  document.getElementById('breathStartBtn').classList.remove('active');
+}
+
+function toggleBreathing() {
+  if(breath.active) stopBreathing();
+  else startBreathing();
+}
+
+function startBreathing() {
+  breath.active = true;
+  breath.phaseIdx = 0;
+  breath.rounds = 0;
+  document.getElementById('breathStartBtn').textContent = '■ Stop';
+  document.getElementById('breathStartBtn').classList.add('active');
+  runBreathPhase();
+}
+
+function stopBreathing() {
+  breath.active = false;
+  clearTimeout(breath.timer);
+  document.getElementById('breathStartBtn').textContent = '▶ Start';
+  document.getElementById('breathStartBtn').classList.remove('active');
+  document.getElementById('breathPhaseLabel').textContent = 'Terminé';
+  const circle = document.getElementById('breathCircle');
+  circle.className = 'breath-circle-inner';
+  circle.style.animationDuration = '';
+}
+
+function runBreathPhase() {
+  if(!breath.active) return;
+  const pat = BREATHING_PATTERNS[breath.pattern];
+  const phase = pat.phases[breath.phaseIdx];
+  const dur = pat.durations[breath.phaseIdx];
+  breath.secondsLeft = dur;
+
+  const labels = { 'Inhale':'Inspirez', 'Hold':'Retenez', 'Exhale':'Expirez', 'Hold out':'Retenez' };
+  document.getElementById('breathPhaseLabel').textContent = labels[phase] || phase;
+
+  const circle = document.getElementById('breathCircle');
+  const cssPhase = phase==='Inhale'?'phase-inhale': phase==='Exhale'?'phase-exhale': phase==='Hold'?'phase-hold':'phase-hold-out';
+  circle.className = 'breath-circle-inner ' + cssPhase;
+  circle.style.animationDuration = dur + 's';
+
+  document.getElementById('breathCountdown').textContent = dur;
+  let elapsed = 0;
+  const tick = () => {
+    if(!breath.active) return;
+    elapsed++;
+    const remaining = dur - elapsed;
+    document.getElementById('breathCountdown').textContent = remaining > 0 ? remaining : 0;
+    if(elapsed < dur) {
+      breath.timer = setTimeout(tick, 1000);
+    } else {
+      breath.phaseIdx = (breath.phaseIdx + 1) % pat.phases.length;
+      if(breath.phaseIdx === 0) {
+        breath.rounds++;
+        document.getElementById('breathRoundsCount').textContent = breath.rounds;
+      }
+      breath.timer = setTimeout(runBreathPhase, 100);
+    }
+  };
+  breath.timer = setTimeout(tick, 1000);
+}
+
+function openMeditation() {
+  document.getElementById('meditationOverlay').classList.add('open');
+}
+function closeMeditation() {
+  document.getElementById('meditationOverlay').classList.remove('open');
+}
+
+function openSleepEntry() {
+  const t = today();
+  const existing = (DB.sleepLog || {})[t] || {};
+  const modal = document.getElementById('sleepEntryModal');
+
+  document.getElementById('sleepHours').value = existing.hours !== undefined ? existing.hours : '';
+  document.getElementById('sleepMinutes').value = existing.minutes !== undefined ? String(existing.minutes).padStart(2,'0') : '';
+  document.getElementById('sleepBedtime').value = existing.bedtime || '';
+  document.getElementById('sleepWakeTime').value = existing.wakeTime || '';
+  document.getElementById('sleepDate').value = t;
+
+  modal.classList.add('open');
+}
+
+function closeSleepEntry() {
+  document.getElementById('sleepEntryModal').classList.remove('open');
+}
+
+function saveSleepEntry() {
+  const hours = parseInt(document.getElementById('sleepHours').value);
+  const minutes = parseInt(document.getElementById('sleepMinutes').value) || 0;
+  const bedtime = document.getElementById('sleepBedtime').value;
+  const wakeTime = document.getElementById('sleepWakeTime').value;
+  const date = document.getElementById('sleepDate').value || today();
+
+  if(isNaN(hours) || hours < 0 || hours > 23) {
+    showToast('⚠️ Please enter valid hours (0–23)');
+    return;
+  }
+
+  if(!DB.sleepLog) DB.sleepLog = {};
+  DB.sleepLog[date] = { hours, minutes, bedtime, wakeTime };
+
+  if(DB.habits['sleep']) DB.habits['sleep'].logs[date] = 'done';
+
+  saveData();
+  closeSleepEntry();
+  showToast(`💤 Sleep logged: ${hours}h ${minutes}min`);
+  renderSleepSummary();
+  if(activePage === 'home') renderActivePage();
+}
+
+function renderSleepSummary() {
+  const el = document.getElementById('sleepSummaryDisplay');
+  if(!el) return;
+  const t = today();
+  const log = (DB.sleepLog || {})[t];
+
+  if(!log) {
+    el.innerHTML = `<span style="color:var(--text-3);font-size:.85rem">Aucune donnée — appuyez sur "Enter" pour saisir</span>`;
+    return;
+  }
+
+  const { hours, minutes, bedtime, wakeTime } = log;
+  let html = `<div>
+    <span class="sleep-big-value">${hours}</span><span class="sleep-big-unit">h</span>
+    <span class="sleep-big-value" style="margin-left:4px">${String(minutes).padStart(2,'0')}</span><span class="sleep-big-unit">min</span>
+  </div>`;
+
+  if(bedtime || wakeTime) {
+    html += `<div class="sleep-meta-row">`;
+    if(bedtime) html += `<div class="sleep-meta-item"><span class="sleep-meta-label">Coucher</span><span class="sleep-meta-value">${bedtime}</span></div>`;
+    if(wakeTime) html += `<div class="sleep-meta-item"><span class="sleep-meta-label">Réveil</span><span class="sleep-meta-value">${wakeTime}</span></div>`;
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
 function init() {
   checkDailyPenalties();
+  if(!DB.sleepLog) { DB.sleepLog = {}; saveData(); }
   showPage('home');
   checkDailyMood();
   initNotifications();
+  renderSleepSummary();
 }
+
 
 document.addEventListener('DOMContentLoaded', init);

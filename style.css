@@ -1319,3 +1319,470 @@ body, .habit-card, .bottom-nav, .page-header, .nav-btn, .tab-btn {
 .habit-toggle-btn[style*="4BD08B"] svg {
   stroke: #4BD08B;
 }
+
+.wellness-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 16px 0;
+}
+
+.wellness-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.wellness-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.wellness-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wellness-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.wellness-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.wellness-beta {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--border);
+  color: var(--text-2);
+  padding: 2px 8px;
+  border-radius: 50px;
+  letter-spacing: 0.04em;
+}
+
+.mind-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mind-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.18s;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.mind-tile:active { transform: scale(0.97); }
+
+.mind-tile-bg {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mood-bg      { background: linear-gradient(135deg, #7B4A2D 0%, #C0632A 100%); }
+.breath-bg    { background: linear-gradient(135deg, #2A2170 0%, #4C3BAF 100%); }
+.meditation-bg { background: linear-gradient(135deg, #1A4035 0%, #2A7055 100%); }
+
+.sleep-summary-card { cursor: pointer; }
+.sleep-summary-card:active { transform: scale(0.99); }
+
+.sleep-icon-wrap {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+
+.sleep-enter-btn {
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sleep-enter-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.sleep-summary-display {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.sleep-big-value {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.sleep-big-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-left: 2px;
+}
+
+.sleep-meta-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.sleep-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sleep-meta-label {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sleep-meta-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sleep-duration-row {
+  display: flex;
+  gap: 12px;
+}
+
+.sleep-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.sleep-num-input {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  text-align: center;
+  font-size: 1.5rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+.sleep-num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sleep-num-input:focus { border-color: var(--accent); }
+
+.sleep-unit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.sleep-time-row {
+  display: flex;
+  gap: 12px;
+}
+
+.sleep-time-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sleep-time-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.sleep-time-input {
+  height: 44px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  padding: 0 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.sleep-time-input:focus { border-color: var(--accent); }
+
+.sleep-date-input { margin-top: 0; }
+
+.breathing-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.breathing-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.breathing-inner {
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 20px 40px;
+  min-height: 100dvh;
+}
+
+.breathing-close {
+  align-self: flex-end;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--border);
+  color: var(--text-2);
+  transition: background 0.15s;
+  margin-bottom: 4px;
+}
+.breathing-close:hover { background: var(--border); color: var(--text); }
+
+.breathing-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.breath-pattern-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.breath-pattern-btn {
+  flex: 1;
+  height: 36px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  transition: all 0.18s;
+}
+
+.breath-pattern-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(124,111,247,0.3);
+}
+
+.breathing-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.breath-circle-outer {
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(124,111,247,0.06);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+
+.breath-circle-mid {
+  width: 170px; height: 170px;
+  border-radius: 50%;
+  background: rgba(124,111,247,0.1);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+
+.breath-circle-inner {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 30px rgba(124,111,247,0.4);
+  transition: transform 0.5s ease;
+}
+
+.breath-countdown {
+  font-family: 'Nunito', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.breath-phase-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  min-height: 2rem;
+  text-align: center;
+}
+
+@keyframes breatheExpand {
+  from { transform: scale(0.65); }
+  to   { transform: scale(1); }
+}
+@keyframes breatheShrink {
+  from { transform: scale(1); }
+  to   { transform: scale(0.65); }
+}
+@keyframes breatheHoldFull {
+  0%, 100% { transform: scale(1); }
+}
+@keyframes breatheHoldSmall {
+  0%, 100% { transform: scale(0.65); }
+}
+
+.breath-circle-inner.phase-inhale {
+  animation: breatheExpand linear forwards;
+}
+.breath-circle-inner.phase-exhale {
+  animation: breatheShrink linear forwards;
+}
+.breath-circle-inner.phase-hold {
+  animation: breatheHoldFull linear forwards;
+}
+.breath-circle-inner.phase-hold-out {
+  animation: breatheHoldSmall linear forwards;
+}
+
+.breath-rounds-display {
+  font-size: 1rem;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.breath-rounds-num {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.breath-pattern-desc {
+  font-size: 0.82rem;
+  color: var(--text-3);
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.breath-start-btn {
+  width: 100%;
+  max-width: 280px;
+  height: 54px;
+  border-radius: 50px;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 20px rgba(124,111,247,0.35);
+  transition: all 0.2s;
+}
+.breath-start-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,111,247,0.45); }
+.breath-start-btn.active { background: #F76F6F; box-shadow: 0 6px 20px rgba(247,111,111,0.35); }
+
+.meditation-modal {
+  padding-bottom: 0;
+}
+
+.meditation-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 24px 36px;
+  gap: 12px;
+  text-align: center;
+}
+
+.meditation-cs-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.meditation-cs-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.meditation-cs-desc {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+.meditation-cs-badge {
+  margin-top: 8px;
+  padding: 6px 20px;
+  border-radius: 50px;
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
